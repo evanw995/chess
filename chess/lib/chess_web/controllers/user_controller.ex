@@ -11,6 +11,9 @@ defmodule ChessWeb.UserController do
 
   def new(conn, _params) do
     changeset = Accounts.change_user(%User{})
+    user = Map.get(changeset, :data)
+    new_user = %{ user | wins: 0, draws: 0, losses: 0 }
+    changeset = %{ changeset | data: new_user }
     render(conn, "new.html", changeset: changeset)
   end
 

@@ -13,17 +13,9 @@
   </li>
 
   <li>
-    <strong>Wins:</strong>
-    <%= @user.wins %>
-  </li>
-
-  <li>
-    <strong>Draws:</strong>
-    <%= @user.draws %>
-  </li>
-
-  <li>
-    <strong>Losses:</strong>
+    <strong>Record (W/D/L): </strong>
+    <%= @user.wins %>/
+    <%= @user.draws %>/
     <%= @user.losses %>
   </li>
 

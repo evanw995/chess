@@ -18,21 +18,15 @@
   </div>
 
   <div class="form-group">
-    <%= label f, :wins, class: "control-label" %>
-    <%= number_input f, :wins, class: "form-control" %>
-    <%= error_tag f, :wins %>
+    <%= hidden_input f, :wins, value: @changeset.data.wins %>
   </div>
 
   <div class="form-group">
-    <%= label f, :draws, class: "control-label" %>
-    <%= number_input f, :draws, class: "form-control" %>
-    <%= error_tag f, :draws %>
+    <%= hidden_input f, :draws, value: @changeset.data.draws %>
   </div>
 
   <div class="form-group">
-    <%= label f, :losses, class: "control-label" %>
-    <%= number_input f, :losses, class: "form-control" %>
-    <%= error_tag f, :losses %>
+    <%= hidden_input f, :losses, value: @changeset.data.losses %>
   </div>
 
   <div class="form-group">
