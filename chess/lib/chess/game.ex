@@ -7,7 +7,8 @@ defmodule Memory.Game do
       whiteCanCastle: true,
       blackCanCastle: true,
       inCheck: false,
-      enPassantSquare: ''
+      enPassantSquare: '' # If a pawn moves two spaces, set this to the space it skips over. 
+													# Every other move will reset this back to empty string
     }
   end
 
@@ -163,6 +164,11 @@ defmodule Memory.Game do
 		end		
 	end
 
+	# Return true if given move is a legal queen move in position
+	def isLegalQueenMove(position, targetSpace, startSpace, color) do
+		(isLegalStraightMove(position, targetSpace, startSpace, color) || isLegalDiagonalMove(position, targetSpace, startSpace, color))
+	end
+
 	# Will need to run a helper function to make sure king isn't moving into check
 	# Will also need to check for castling case-- hard code spaces?
 	def isLegalKingMove(position, targetSpace, startSpace, color) do
@@ -170,10 +176,7 @@ defmodule Memory.Game do
 		false
 	end
 
-	def isLegalQueenMove(position, targetSpace, startSpace, color) do
-		(isLegalStraightMove(position, targetSpace, startSpace, color) || isLegalDiagonalMove(position, targetSpace, startSpace, color))
-	end
-
+	# Return true if given move is a legal pawn move in position
 	def isLegalPawnMove(position, targetSpace, startSpace, color) do
 		# placeholder
 		false
@@ -321,6 +324,7 @@ defmodule Memory.Game do
 		end
 	end
 
+	# pattern match for getting list of all legal pawn moves
 	def getLegalPawnMoves(position, color, startSpace) do
 		getLegalPawnMoves(position, color, startSpace, [])
 	end
@@ -328,7 +332,9 @@ defmodule Memory.Game do
 	# TODO-- change this to fit format of others? (Use isLegalDiagonal/StraightMove()?)
 	def getLegalPawnMoves(position, color, startSpace, moves) do
 		files = 'abcdefgh'
-		ranks = '12345678'
+		startRank = String.to_integer(String.at(startSpace, 1))
+		startFile = String.at(startSpace, 0)
+
 		# Get forward moves
 		cond do
 			(color == 'w')) ->
