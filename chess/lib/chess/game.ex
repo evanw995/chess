@@ -128,8 +128,21 @@ defmodule Memory.Game do
 	end
 
 	def isLegalKnightMove(position, targetSpace, startSpace, color) do
-		# placeholder
-		false		
+		listKnightMoves = listAllKnightMoves(startSpace)
+		cond do
+			!Enum.member?(listKnightMoves, targetSpace) -> # is not a valid move from current position
+				false
+			Map.has_key?(position, targetSpace) -> # contains a piece on target spot
+				piece = position[:targetSpace]
+				pieceColor = String.at(piece, 0)
+				if (pieceColor == enemyColor(color)) do # Enemy piece
+					true
+				else # Friendly piece, illegal move
+					false
+				end
+			true -> # Valid knight move, no piece on target space
+				true
+		end		
 	end
 
 	# Will need to run a helper function to make sure king isn't moving into check
@@ -141,6 +154,20 @@ defmodule Memory.Game do
 
 	def isLegalQueenMove(position, targetSpace, startSpace, color) do
 		(isLegalStraightMove(position, targetSpace, startSpace, color) || isLegalDiagonalMove(position, targetSpace, startSpace, color))
+	end
+
+	def listAllKnightMoves(space) do
+		space1 = [changeFile(changeRank(space, 1) 2)]
+		space2 = [changeFile(changeRank(space, -1) 2)]
+		space3 = [changeFile(changeRank(space, 1) -2)]
+		space4 = [changeFile(changeRank(space, -1) -2)]
+		space5 = [changeFile(changeRank(space, 2) 1)]
+		space6 = [changeFile(changeRank(space, 2) -1)]
+		space7 = [changeFile(changeRank(space, -2) 1)]
+		space8 = [changeFile(changeRank(space, -2) -1)]
+		allSpaces = Enum.concat([space1, space2, space3, space4, space5, space6, space7, space8])
+		dedupSpaces = Enum.dedup(allSpaces)
+		dedupSpaces
 	end
 
 	##################################################################################
@@ -218,9 +245,7 @@ defmodule Memory.Game do
 		rankString = String.at(space, 1)
 		rank = String.to_integer(rankString)
 		cond do
-			(rank == 1) && (direction == -1) -> # bad case
-				space
-			(rank == 8) && (direction == 1) -> # bad case
+			(rank + direction < 1) || (rank + direction > 8) -> # bad case
 				space
 			true ->
 				newRank = rank + direction
@@ -239,9 +264,7 @@ defmodule Memory.Game do
 		fileIndex = elem(fileIndexMatch, 0)
 		rankString = String.at(space, 1)
 		cond do
-			fileIndex == 0 && direction == -1 -> # bad case
-				space
-			fileIndex == 7 && direction == 1 -> # bad case
+			(fileIndex + direction < 0) || (fileIndex + direction > 7) -> # bad case
 				space
 			true ->
 				newFileIndex = fileIndex + direction
