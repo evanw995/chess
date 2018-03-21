@@ -75,7 +75,7 @@ defmodule Memory.Game do
 	# - captures
 	# - piece promotion (auto-queen or not?)
 	def performMove(game, move) do
-		game #return new game object
+		game # return new game object
 	end
 
 	#########################################################################
@@ -88,14 +88,43 @@ defmodule Memory.Game do
 
 	# Covers bishop case, can be used for pawns/queens/king
 	def isLegalDiagonalMove(position, targetSpace, startSpace, color) do
-		# placeholder
-		false
+		diagonal = findCorrectDiagonal(startSpace, targetSpace)
+		size = Enum.count(diagonal)
+		cond do
+			size == 0 ->
+				false # No diagonal contains target and start space, illegal move
+			true ->
+				index = Enum.find_index(diagonal, targetSpace) - 1
+				Enum.slice(diagonal, 1..index)
+				containsNoPieces(squares, position) # If no pieces are in between start space and target space, move is valid (provided not in check)
+		end
 	end
 
 	# Covers rook case, can be used for pawns/queens/king
 	def isLegalStraightMove(position, targetSpace, startSpace, color) do
-		# placeholder
-		false
+		straight = findCorrectStraight(startSpace, targetSpace)
+		size = Enum.count(straight)
+		cond do
+			size == 0 ->
+				false # No straight contains target and start space, illegal move
+			true ->
+				index = Enum.find_index(straight, targetSpace) - 1
+				Enum.slice(straight, 1..index)
+				containsNoPieces(squares, position) # If no pieces are in between start space and target space, move is valid (provided not in check)
+		end
+	end
+
+	# Return true if given enum of squares contains no pieces in game position
+	def containsNoPieces(squares, position) do
+		size = Enum.count(squares)
+		cond do
+			size == 0 -> # No more items to check, return true
+				true
+			Map.has_key?(position, space) -> # Space contained in position object = occupied by piece
+				false
+			true ->
+				containsNoPieces(Enum.slice(squares, 1..size-1), position) # Recurse
+		end
 	end
 
 	def isLegalKnightMove(position, targetSpace, startSpace, color) do
@@ -103,6 +132,8 @@ defmodule Memory.Game do
 		false		
 	end
 
+	# Will need to run a helper function to make sure king isn't moving into check
+	# Will also need to check for castling case-- hard code spaces?
 	def isLegalKingMove(position, targetSpace, startSpace, color) do
 		# placeholder
 		false
@@ -112,7 +143,73 @@ defmodule Memory.Game do
 		(isLegalStraightMove(position, targetSpace, startSpace, color) || isLegalDiagonalMove(position, targetSpace, startSpace, color))
 	end
 
+	##################################################################################
 	### FUNCTIONS FOR NAVIGATING THE BOARD AND DETERMINING IF SPACES ARE AVAILABLE ###
+	##################################################################################
+
+	# Return an enum of spaces on the diagonal from the start space that contains the target space
+	# Return empty if no diagonal exists
+	def findCorrectDiagonal(startSpace, targetSpace) do
+		diagonal1 = getSquares(startSpace, -1, -1, []) # down-left
+		diagonal2 = getSquares(startSpace, -1, 1, []) # up-left
+		diagonal3 = getSquares(startSpace, 1, -1, []) # down-right
+		diagonal4 = getSquares(startSpace, 1, 1, []) # up-right
+		cond do
+			Enum.member?(diagonal1, targetSpace) ->
+				diagonal1
+			Enum.member?(diagonal2, targetSpace) ->
+				diagonal2
+			Enum.member?(diagonal3, targetSpace) ->
+				diagonal3
+			Enum.member?(diagonal4, targetSpace) ->
+				diagonal4
+			true ->
+				[]
+		end
+	end
+
+	# Return an enum of spaces on the straight from the start space that contains the target space
+	# Return empty if no straight exists
+	def findCorrectStraight(startSpace, targetSpace) do
+		straight1 = getSquares(startSpace, 0, 1, []) # up
+		straight2 = getSquares(startSpace, 0, -1, []) # down
+		straight3 = getSquares(startSpace, 1, 0, []) # right
+		straight4 = getSquares(startSpace, -1, 0, []) # left
+		cond do
+			Enum.member?(straight1, targetSpace) ->
+				straight1
+			Enum.member?(straight2, targetSpace) ->
+				straight2
+			Enum.member?(straight3, targetSpace) ->
+				straight3
+			Enum.member?(straight4, targetSpace) ->
+				straight4
+			true ->
+				[]
+		end
+	end
+
+	# Returns the enum of squares in given direction from space
+	def getSquares(space, fileDirection, rankDirection, squares) do
+		files = 'abcdefgh'
+		fileString = String.at(space, 0)
+		fileIndex = elem(:binary.match(files, fileString), 0)
+		rank = String.to_integer(String.at(space, 1))
+		newSquares = Enum.concat(squares, [space])
+		if (fileIndex + fileDirection > 7 || rank + rankDirection > 8 ||
+				fileIndex + fileDirection < 0 || rank + rankDirection < 1) do
+			newSquares
+		else
+			getSquares(getAdjacentSpace(space, fileDirection, rankDirection), fileDirection, rankDirection, newSquares)
+		end
+	end
+
+	# Get space diagonal from given space
+	def getAdjacentSpace(space, fileDirection, rankDirection) do
+		spaceWithFileChange = changeFile(space, fileDirection)
+		newSpace = changeRank(spaceWithFileChange, rankDirection)
+		newSpace
+	end
 
 	# Go up or down ranks. Direction 1 = add, -1 = subtract
 	# Return string of new space
@@ -142,9 +239,9 @@ defmodule Memory.Game do
 		fileIndex = elem(fileIndexMatch, 0)
 		rankString = String.at(space, 1)
 		cond do
-			fileIndex == 0 && direction == -1 -> #bad case
+			fileIndex == 0 && direction == -1 -> # bad case
 				space
-			fileIndex == 7 && direction == 1 -> #bad case
+			fileIndex == 7 && direction == 1 -> # bad case
 				space
 			true ->
 				newFileIndex = fileIndex + direction
