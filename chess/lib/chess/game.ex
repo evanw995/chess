@@ -34,35 +34,44 @@ defmodule Memory.Game do
 			(move.piece != game.position[:move.source]) -> # That piece isn't on that square, how did you even call this?
 				game
 			(piece == 'P') -> # Pawn move
-				# If getLegalPawnMoves contains move
-				# perform move and return new game object 
+				if isLegalPawnMove(game.position, move.newLocation, move.oldLocation, color) do
+					newGameState = performMove(game, move)
+					newGameState
+				else
+					game 
+				end
 			(piece == 'R') -> # Rook move
 				if isLegalStraightMove(game.position, move.newLocation, move.oldLocation, color) do
-					# Perform move and return new game object
+					newGameState = performMove(game, move)
+					newGameState
 				else
 					game
 				end
 			(piece == 'B') -> # Bishop move
 				if isLegalDiagonalMove(game.position, move.newLocation, move.oldLocation, color) do
-					# Perform move and return new game object
+					newGameState = performMove(game, move)
+					newGameState
 				else
 					game
 				end
 			(piece == 'N') -> # Knight move
 				if isLegalKnightMove(game.position, move.newLocation, move.oldLocation, color) do
-					# Perform move and return new game object
+					newGameState = performMove(game, move)
+					newGameState
 				else
 					game
 				end
 			(piece == 'Q') -> # Queen move
 				if isLegalQueenMove(game.position, move.newLocation, move.oldLocation, color) do
-					# Perform move and return new game object
+					newGameState = performMove(game, move)
+					newGameState
 				else
 					game
 				end
 			(piece == 'K') -> # King move
 				if isLegalKingMove(game.position, move.newLocation, move.oldLocation, color) do
-					# Perform move and return new game object
+					newGameState = performMove(game, move)
+					newGameState
 				else
 					game
 				end
@@ -74,15 +83,16 @@ defmodule Memory.Game do
 	# - en passant
 	# - captures
 	# - piece promotion (auto-queen or not?)
+	# - adding piece to target square, removing piece from source square
 	def performMove(game, move) do
 		game # return new game object
 	end
 
-	#########################################################################
-	# Start at target space, work backwards towards starting space of piece #
-	# Check if there any pieces in the way (return false if so)             #
-	# Call these functions recursively until targetSpace = startSpace       #
-	#########################################################################
+	###################################################################################
+	# Get list of geometrically viable moves                                          #
+	# Check if target space is in that list of viable moves                           #
+	# Check to make sure there are no pieces in between start space and target        #
+	###################################################################################
 
 	### DETERMINE IF A MOVE IS LEGAL ###
 
@@ -93,9 +103,19 @@ defmodule Memory.Game do
 		cond do
 			size == 0 ->
 				false # No diagonal contains target and start space, illegal move
-			true ->
+			Map.has_key?(position, targetSpace) -> # contains a piece on target spot
+				piece = position[:targetSpace]
+				pieceColor = String.at(piece, 0)
 				index = Enum.find_index(diagonal, targetSpace) - 1
-				Enum.slice(diagonal, 1..index)
+				squares = Enum.slice(diagonal, 1..index)
+				if (pieceColor == enemyColor(color) && containsNoPieces(squares, position)) do # Enemy piece & nothing in the way
+					true
+				else # Friendly piece, illegal move
+					false
+				end
+			true -> # Target space is empty, check for pieces in the way
+				index = Enum.find_index(diagonal, targetSpace) - 1
+				squares = Enum.slice(diagonal, 1..index)
 				containsNoPieces(squares, position) # If no pieces are in between start space and target space, move is valid (provided not in check)
 		end
 	end
@@ -107,26 +127,24 @@ defmodule Memory.Game do
 		cond do
 			size == 0 ->
 				false # No straight contains target and start space, illegal move
-			true ->
+			Map.has_key?(position, targetSpace) -> # contains a piece on target spot
+				piece = position[:targetSpace]
+				pieceColor = String.at(piece, 0)
 				index = Enum.find_index(straight, targetSpace) - 1
-				Enum.slice(straight, 1..index)
+				squares = Enum.slice(straight, 1..index)
+				if (pieceColor == enemyColor(color) && containsNoPieces(squares, position)) do # Enemy piece & nothing in the way
+					true
+				else # Friendly piece, illegal move
+					false
+				end
+			true -> # Target space is empty, check for pieces in the way
+				index = Enum.find_index(straight, targetSpace) - 1
+				squares = Enum.slice(straight, 1..index)
 				containsNoPieces(squares, position) # If no pieces are in between start space and target space, move is valid (provided not in check)
 		end
 	end
 
-	# Return true if given enum of squares contains no pieces in game position
-	def containsNoPieces(squares, position) do
-		size = Enum.count(squares)
-		cond do
-			size == 0 -> # No more items to check, return true
-				true
-			Map.has_key?(position, space) -> # Space contained in position object = occupied by piece
-				false
-			true ->
-				containsNoPieces(Enum.slice(squares, 1..size-1), position) # Recurse
-		end
-	end
-
+	# Return true if the given move is a legal knight move in the position
 	def isLegalKnightMove(position, targetSpace, startSpace, color) do
 		listKnightMoves = listAllKnightMoves(startSpace)
 		cond do
@@ -156,6 +174,12 @@ defmodule Memory.Game do
 		(isLegalStraightMove(position, targetSpace, startSpace, color) || isLegalDiagonalMove(position, targetSpace, startSpace, color))
 	end
 
+	def isLegalPawnMove(position, targetSpace, startSpace, color) do
+		# placeholder
+		false
+	end
+
+	# Lists possible spaces a knight can move to (does not account for whether or not the spaces are occupied)
 	def listAllKnightMoves(space) do
 		space1 = [changeFile(changeRank(space, 1) 2)]
 		space2 = [changeFile(changeRank(space, -1) 2)]
@@ -173,6 +197,19 @@ defmodule Memory.Game do
 	##################################################################################
 	### FUNCTIONS FOR NAVIGATING THE BOARD AND DETERMINING IF SPACES ARE AVAILABLE ###
 	##################################################################################
+	
+	# Return true if given enum of squares contains no pieces in game position
+	def containsNoPieces(squares, position) do
+		size = Enum.count(squares)
+		cond do
+			size == 0 -> # No more items to check, return true
+				true
+			Map.has_key?(position, space) -> # Space contained in position object = occupied by piece
+				false
+			true ->
+				containsNoPieces(Enum.slice(squares, 1..size-1), position) # Recurse
+		end
+	end
 
 	# Return an enum of spaces on the diagonal from the start space that contains the target space
 	# Return empty if no diagonal exists
