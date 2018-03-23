@@ -75,7 +75,8 @@ defmodule Memory.Game do
 				end
 			(piece == 'K') -> # King move
 				if isLegalKingMove(game.position, move.newLocation, move.oldLocation, color) do
-					newGameState = performMove(game, move)
+					pieceMovedGameState = performMove(game, move)
+					newGameState = checkGameState(pieceMovedGameState)
 					newGameState
 				else
 					game
@@ -396,6 +397,23 @@ defmodule Memory.Game do
 	# def getLegalKingMoves(position, color) do
 		
 	# end
+
+	######################
+	# GAME STATE HELPERS #
+	######################
+	
+	# Return full game state 
+	def checkGameState(game) do
+		kingSpace = if game.turn == 'w' do
+			game.whiteKingSpace
+		else
+			game.blackKingSpace
+		end
+		newState = Map.put(game, :isCheck, isCheck(game.position, game.turn, kingSpace))
+		gameOver = (isCheckMate(game.position, game.turn, kingSpace) || isStaleMate(game.position, game.turn, kingSpace))
+		newState1 = Map.put(newState, :gameOver, gameOver)
+		newState1
+	end
 
 	# Tough function: Determine whether king is in check
 	# - Check all opponent pieces and see if they could move to the king's space
