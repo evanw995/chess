@@ -35,7 +35,7 @@ defmodule Memory.Game do
 			(move.piece != game.position[:move.source]) -> # That piece isn't on that square, how did you even call this?
 				game
 			(piece == 'P') -> # Pawn move
-				if isLegalPawnMove(game.position, move.newLocation, move.oldLocation, color) do
+				if isLegalPawnMove(game.position, move.newLocation, move.oldLocation, color, game.enPassantSquare) do
 					newGameState = performMove(game, move)
 					newGameState
 				else
@@ -177,9 +177,9 @@ defmodule Memory.Game do
 	end
 
 	# Return true if given move is a legal pawn move in position
-	def isLegalPawnMove(position, targetSpace, startSpace, color) do
-		# placeholder
-		false
+	def isLegalPawnMove(position, targetSpace, startSpace, color, enPassantSquare) do
+		moves = listLegalPawnMoves(position, color, startSpace, enPassantSquare)
+		Enum.member?(moves, targetSpace)
 	end
 
 	# Lists possible spaces a knight can move to (does not account for whether or not the spaces are occupied)
@@ -324,32 +324,48 @@ defmodule Memory.Game do
 		end
 	end
 
-	# pattern match for getting list of all legal pawn moves
-	def getLegalPawnMoves(position, color, startSpace) do
-		getLegalPawnMoves(position, color, startSpace, [])
-	end
-
 	# TODO-- change this to fit format of others? (Use isLegalDiagonal/StraightMove()?)
-	def getLegalPawnMoves(position, color, startSpace, moves) do
-		files = 'abcdefgh'
+	def listLegalPawnMoves(position, color, startSpace, enPassantSquare) do
 		startRank = String.to_integer(String.at(startSpace, 1))
 		startFile = String.at(startSpace, 0)
+		moves = []
 
-		# Get forward moves
 		cond do
-			(color == 'w')) ->
-				# if spaceAvailable(position, String.at(startSpace, 0) + () )
-		  # Pawns in starting position
-			((String.at(start, 1) == '2') && (color == 'w')) ->
-			((String.at(start, 1) == '7') && (color == 'b')) ->
-			# Else
+			color == 'w' -> # white pieces
+				forwardSpace = changeRank(startSpace, 1)
+				leftCapture = changeRank(changeFile(startSpace, -1), 1)
+				leftCapture = changeRank(changeFile(startSpace, 1), 1)
+				doubleSpace = changeRank(startSpace, 2)
+			true -> # black pieces
+				forwardSpace = changeRank(startSpace, -1)
+				leftCapture = changeRank(changeFile(startSpace, -1), -1)
+				leftCapture = changeRank(changeFile(startSpace, 1), -1)
+				doubleSpace = changeRank(startSpace, -2)
 		end
-		# Get possible attack moves
+		# Check forward moves
+		if spaceAvailable(position, forwardSpace, color) do
+				if spaceAvailable(position, doubleSpace, color) do
+					moves = Enum.concat([moves, [doubleSpace]])
+				end
+			moves = Enum.concat([moves, [forwardSpace]])
+		end
+		# Check captures
 		cond do
-			color == 'w' ->
-			color == 'b' ->
+			position[:leftCapture] != nil ->
+				if String.at(position[:leftCapture], 0) == enemyColor(color) do
+					moves = Enum.concat([moves, [leftCapture]])
+				end
+			enPassantSquare == leftCapture ->
+				moves = Enum.concat([moves, [leftCapture]])	
 		end
-		# return
+		cond do
+			position[:rightCapture] != nil ->
+				if String.at(position[:rightCapture], 0) == enemyColor(color) do
+					moves = Enum.concat([moves, [rightCapture]])
+				end
+			enPassantSquare == rightCapture ->
+				moves = Enum.concat([moves, [rightCapture]])	
+		end
 		moves
 	end	
 
