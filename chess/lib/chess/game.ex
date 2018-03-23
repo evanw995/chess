@@ -4,8 +4,12 @@ defmodule Memory.Game do
       position: startPosition(),
       gameOver: false,
       turn: 'w',
-      whiteCanCastle: true,
-      blackCanCastle: true,
+      whiteKingsideCastle: true,
+      blackKingsideCastle: true,
+      whiteQueensideCastle: true,
+      blackQueensideCastle: true,
+			whiteKingSpace: 'e1', # Makes it easier to validate checks/checkmate
+			blackKingSpace: 'e8', # ^^^
       inCheck: false,
       enPassantSquare: '' # If a pawn moves two spaces, set this to the space it skips over. 
 													# Every other move will reset this back to empty string
@@ -394,9 +398,42 @@ defmodule Memory.Game do
 	# end
 
 	# Tough function: Determine whether king is in check
-	# Possible methods:
 	# - Check all opponent pieces and see if they could move to the king's space
-	def isCheck(game) do
+	# Color is whose turn it is (white moving, see if white king is in check)
+	def isCheck(position, color, kingSpace) do
+		# placeholder
+		enemyColor = enemyColor(color)
+		pieces = Map.to_list(position)
+		king = '#{color}K'
+		checks = Enum.map(pieces, fn({k, v}) ->
+			if String.at(v, 0) == enemyColor do
+				piece = String.at(v, 1)
+				cond do
+					piece == 'P' ->
+						isLegalPawnMove(position, kingSpace, k, color, '')
+					piece == 'R' ->
+						isLegalStraightMove(position, kingSpace, k, color)
+					piece == 'N' ->
+						isLegalKnightMove(position, kingSpace, k, color)
+					piece == 'B' ->
+						isLegalDiagonalMove(position, kingSpace, k, color)
+					piece == 'Q' ->
+						isLegalQueenMove(position, kingSpace, k color)
+				end
+			end 
+		end)
+		Enum.member?(checks, true)
+	end
+
+	# Determines if the position is checkmate for given color
+	# If king is in check, validate whether king is in check after all possible moves for given color 
+	def isCheckMate(position, color, kingSpace) do
+		# placeholder
+		false
+	end
+
+	# Opposite of checkmate function-- king is not in check, but all legal moves would place him in check
+	def isStaleMate(position, color, kingSpace) do
 		# placeholder
 		false
 	end
@@ -419,38 +456,38 @@ defmodule Memory.Game do
 	# when moving pieces from squares, be sure to delete the key from the map 
   def startPosition() do
     %{
-        a1: 'wR',
-        b1: 'wN',
-        c1: 'wB',
-        d1: 'wQ',
-        e1: 'wK',
-        f1: 'wB',
-        g1: 'wN',
-        h1: 'wR',
-        a2: 'wP',
-        b2: 'wP',
-        c2: 'wP',
-        d2: 'wP',
-        e2: 'wP',
-        f2: 'wP',
-        g2: 'wP',
-        h2: 'wP',
-        a8: 'bR',
-        b8: 'bN',
-        c8: 'bB',
-        d8: 'bQ',
-        e8: 'bK',
-        f8: 'bB',
-        g8: 'bN',
-        h8: 'bR',
-        a7: 'bP',
-        b7: 'bP',
-        c7: 'bP',
-        d7: 'bP',
-        e7: 'bP',
-        f7: 'bP',
-        g7: 'bP',
-        h7: 'bP'
+        'a1': 'wR',
+        'b1': 'wN',
+        'c1': 'wB',
+        'd1': 'wQ',
+        'e1': 'wK',
+        'f1': 'wB',
+        'g1': 'wN',
+        'h1': 'wR',
+        'a2': 'wP',
+        'b2': 'wP',
+        'c2': 'wP',
+        'd2': 'wP',
+        'e2': 'wP',
+        'f2': 'wP',
+        'g2': 'wP',
+        'h2': 'wP',
+        'a8': 'bR',
+        'b8': 'bN',
+        'c8': 'bB',
+        'd8': 'bQ',
+        'e8': 'bK',
+        'f8': 'bB',
+        'g8': 'bN',
+        'h8': 'bR',
+        'a7': 'bP',
+        'b7': 'bP',
+        'c7': 'bP',
+        'd7': 'bP',
+        'e7': 'bP',
+        'f7': 'bP',
+        'g7': 'bP',
+        'h7': 'bP'
     }
   end
 
