@@ -38,45 +38,52 @@ defmodule Memory.Game do
 				game
 			(move.piece != game.position[:move.source]) -> # That piece isn't on that square, how did you even call this?
 				game
+			(move.newLocation == move.oldLocation) -> # That's not a move!
+				game
 			(piece == 'P') -> # Pawn move
 				if isLegalPawnMove(game.position, move.newLocation, move.oldLocation, color, game.enPassantSquare) do
-					newGameState = performMove(game, move)
+					pieceMovedGameState = performMove(game, move)
+					newGameState = checkGameState(pieceMovedGameState)
 					newGameState
 				else
 					game 
 				end
 			(piece == 'R') -> # Rook move
 				if isLegalStraightMove(game.position, move.newLocation, move.oldLocation, color) do
-					newGameState = performMove(game, move)
+					pieceMovedGameState = performMove(game, move)
+					newGameState = checkGameState(pieceMovedGameState)
 					newGameState
 				else
 					game
 				end
 			(piece == 'B') -> # Bishop move
 				if isLegalDiagonalMove(game.position, move.newLocation, move.oldLocation, color) do
-					newGameState = performMove(game, move)
+					pieceMovedGameState = performMove(game, move)
+					newGameState = checkGameState(pieceMovedGameState)
 					newGameState
 				else
 					game
 				end
 			(piece == 'N') -> # Knight move
 				if isLegalKnightMove(game.position, move.newLocation, move.oldLocation, color) do
-					newGameState = performMove(game, move)
+					pieceMovedGameState = performMove(game, move)
+					newGameState = checkGameState(pieceMovedGameState)
 					newGameState
 				else
 					game
 				end
 			(piece == 'Q') -> # Queen move
 				if isLegalQueenMove(game.position, move.newLocation, move.oldLocation, color) do
-					newGameState = performMove(game, move)
+					pieceMovedGameState = performMove(game, move)
+					newGameState = checkGameState(pieceMovedGameState)
 					newGameState
 				else
 					game
 				end
 			(piece == 'K') -> # King move
-				if isLegalKingMove(game.position, move.newLocation, move.oldLocation, color) do
+				if isLegalKingMove(game, move.newLocation, move.oldLocation, color) do
 					pieceMovedGameState = performMove(game, move)
-					newGameState = checkGameState(pieceMovedGameState)
+					newGameState = checkGameState(pieceMovedGameState) # TODO: Check for checks on both sides, as king move could open a check on opponent
 					newGameState
 				else
 					game
@@ -176,9 +183,51 @@ defmodule Memory.Game do
 
 	# Will need to run a helper function to make sure king isn't moving into check
 	# Will also need to check for castling case-- hard code spaces?
-	def isLegalKingMove(position, targetSpace, startSpace, color) do
-		# placeholder
-		false
+	def isLegalKingMove(game, targetSpace, startSpace, color) do
+		files = 'abcdefgh'
+		position = game.position
+		# king
+		startFileString = String.at(startSpace, 0)
+		startFileIndex = elem(:binary.match(files, startFileString), 0)
+		startRank = String.to_integer(String.at(startSpace, 1))
+		# target
+		targetFileString = String.at(targetSpace, 0)
+		targetFileIndex = elem(:binary.match(files, targetFileString), 0)
+		targetRank = String.to_integer(String.at(targetSpace, 1))
+		cond do
+			startSpace == 'e1' && targetSpace == 'g1' ->
+				if color == 'w' && game.whiteKingsideCastle do
+					true
+				else
+				false
+				end
+			startSpace == 'e1' && targetSpace == 'c1' ->
+				if color == 'w' && game.whiteQueensideCastle do
+					true
+				else
+				false
+				end
+			startSpace == 'e8' && targetSpace == 'g8' ->
+				if color == 'b' && game.blackKingsideCastle do
+					true
+				else
+				false
+				end
+			startSpace == 'e8' && targetSpace == 'c8' ->
+				if color == 'b' && game.blackQueensideCastle do
+					true
+				else
+				false
+				end
+			abs(startFileIndex - targetFileIndex) < 2 && abs(startRank - targetRank) < 2 -> # Move must be within one space in any direction
+				if spaceAvailable(position, targetSpace, color) do
+					true
+				else
+					(String.at(position[:targetSpace], 0) != color)
+				end
+			true ->
+				false
+		end
 	end
 
 	# Return true if given move is a legal pawn move in position
