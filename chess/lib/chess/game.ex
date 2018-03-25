@@ -111,12 +111,26 @@ defmodule Memory.Game do
 
 	# Must nullify that side castling
 	def rookMove(game, move) do
-
+		castleGameState = cond do
+			move.oldLocation == "a1" && game.whiteQueensideCastle ->
+				Map.put(game, :whiteQueensideCastle, false)
+			move.oldLocation == "h1" && game.whiteKingsideCastle ->
+				Map.put(game, :whiteKingsideCastle, false)
+			move.oldLocation == "a8" && game.blackQueensideCastle ->
+				Map.put(game, :blackQueensideCastle, false)
+			move.oldLocation == "h8" && game.blackKingsideCastle ->
+				Map.put(game, :blackKingsideCastle, false)
+			true ->
+				game
+		end
+		performMove(castleGameState, move)
 	end
 
 	# Must handle castling and set castling rights
 	def kingMove(game, move) do
-
+		castleGameState = cond do
+			# place holder
+		end
 	end
 
 	# Must set enPassantSquare, check for promotion
@@ -222,25 +236,25 @@ defmodule Memory.Game do
 		cond do
 			startSpace == "e1" && targetSpace == "g1" ->
 				if color == "w" && game.whiteKingsideCastle do
-					true
+					spaceAvailable(position, "f1", color) && spaceAvailable(position, "g1", color)
 				else
 				false
 				end
 			startSpace == "e1" && targetSpace == "c1" ->
 				if color == "w" && game.whiteQueensideCastle do
-					true
+					spaceAvailable(position, "d1", color) && spaceAvailable(position, "c1", color) && spaceAvailable(position, "b1", color)
 				else
 				false
 				end
 			startSpace == "e8" && targetSpace == "g8" ->
 				if color == "b" && game.blackKingsideCastle do
-					true
+					spaceAvailable(position, "f8", color) && spaceAvailable(position, "g8", color)
 				else
 				false
 				end
 			startSpace == "e8" && targetSpace == "c8" ->
 				if color == "b" && game.blackQueensideCastle do
-					true
+					spaceAvailable(position, "d8", color) && spaceAvailable(position, "c8", color) && spaceAvailable(position, "b8", color)
 				else
 				false
 				end
