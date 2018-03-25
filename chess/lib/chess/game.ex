@@ -1,4 +1,4 @@
-defmodule Memory.Game do
+defmodule Chess.Game do
   def newGame() do
     %{
       position: startPosition(),
