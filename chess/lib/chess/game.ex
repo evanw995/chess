@@ -1,4 +1,4 @@
-defmodule Memory.Game do
+defmodule Chess.Game do
   def newGame() do
     %{
       position: startPosition(),
@@ -8,8 +8,8 @@ defmodule Memory.Game do
       blackKingsideCastle: true,
       whiteQueensideCastle: true,
       blackQueensideCastle: true,
-			whiteKingSpace: "e1", # Makes it easier to validate checks/checkmate
-			blackKingSpace: "e8", # ^^^
+	  whiteKingSpace: "e1", # Makes it easier to validate checks/checkmate
+	  blackKingSpace: "e8", # ^^^
       inCheck: false,
       enPassantSquare: "" # If a pawn moves two spaces, set this to the space it skips over. 
 													# Every other move will reset this back to empty string
@@ -42,7 +42,7 @@ defmodule Memory.Game do
 				game
 			(piece == "P") -> # Pawn move
 				if isLegalPawnMove(game.position, move.newLocation, move.oldLocation, color, game.enPassantSquare) do
-					pieceMovedGameState = performMove(game, move)
+					pieceMovedGameState = pawnMove(game, move)
 					newGameState = checkGameState(pieceMovedGameState)
 					newGameState
 				else
@@ -50,7 +50,7 @@ defmodule Memory.Game do
 				end
 			(piece == "R") -> # Rook move
 				if isLegalStraightMove(game.position, move.newLocation, move.oldLocation, color) do
-					pieceMovedGameState = performMove(game, move)
+					pieceMovedGameState = rookMove(game, move)
 					newGameState = checkGameState(pieceMovedGameState)
 					newGameState
 				else
@@ -81,8 +81,8 @@ defmodule Memory.Game do
 					game
 				end
 			(piece == "K") -> # King move
-				if isLegalKingMove(game, move.newLocation, move.oldLocation, color) do
-					pieceMovedGameState = performMove(game, move)
+				if isLegalKingMove(game, move.newLocation, move.oldLocation, color, game.inCheck) do
+					pieceMovedGameState = kingMove(game, move)
 					newGameState = checkGameState(pieceMovedGameState) # TODO: Check for checks on both sides, as king move could open a check on opponent
 					newGameState
 				else
@@ -99,13 +99,27 @@ defmodule Memory.Game do
 	# - adding piece to target square, removing piece from source square
 	def performMove(game, move) do
 		position = game.position
+
+		oldLocationRank = String.to_integer(String.at(move.oldLocation, 1))
+		newLocationRank = String.to_integer(String.at(move.newLocation, 1))
+
+		# keys to access map
 		oldLocation = String.to_atom(move.oldLocation)
 		newLocation = String.to_atom(move.newLocation)
 		piece = position[oldLocation]
 		removePiece = Map.delete(position, oldLocation)
 		newPosition = Map.put(removePiece, newLocation, piece)
 		newGameState = Map.put(game, :position, newPosition)
-		newGameState1 = Map.put(game, :enPassantSquare, "")
+
+		newGameState1 = cond do 
+			piece == "P" && abs(oldLocationRank - newLocationRank) == 2 -> # Pawn moved two spaces, enable en passant square
+				fileString = String.at(move.oldLocation, 0)
+				middleSquare = (oldLocationRank + newLocationRank) / 2
+				middleSquareString = Integer.to_string(middleSquare)
+				Map.put(game, :enPassantSquare, "#{fileString}#{middleSquareString}")
+			true ->
+				Map.put(game, :enPassantSquare, "")
+		end
 		newGameState1
 	end
 
@@ -128,16 +142,61 @@ defmodule Memory.Game do
 
 	# Must handle castling and set castling rights
 	def kingMove(game, move) do
-		castleGameState = cond do
-			# place holder
-			true ->
-				game
+		cond do
+			move.oldLocation == "e1" && game.whiteQueensideCastle && move.newLocation == "c1" ->
+				newState = Map.put(game, :whiteQueensideCastle, false)
+				newState1 = Map.put(newState, :whiteKingsideCastle, false)
+				moveKing = performMove(newState1, move)
+				moveKingState = Map.put(moveKing, :whiteKingSpace, "c1")
+				performMove(moveKingState, %{ oldLocation: "a1", newLocation: "d1"})
+			move.oldLocation == "e1" && game.whiteKingsideCastle && move.newLocation == "g1" ->
+				newState = Map.put(game, :whiteQueensideCastle, false)
+				newState1 = Map.put(newState, :whiteKingsideCastle, false)
+				moveKing = performMove(newState1, move)
+				moveKingState = Map.put(moveKing, :whiteKingSpace, "g1")
+				performMove(moveKingState, %{ oldLocation: "h1", newLocation: "f1"})
+			move.oldLocation == "e8" && game.blackQueensideCastle && move.newLocation == "c8" ->
+				newState = Map.put(game, :blackQueensideCastle, false)
+				newState1 = Map.put(newState, :blackKingsideCastle, false)
+				moveKing = performMove(newState1, move)
+				moveKingState = Map.put(moveKing, :whiteKingSpace, "c8")
+				performMove(moveKingState, %{ oldLocation: "a8", newLocation: "d8"})
+			move.oldLocation == "e8" && game.blackKingsideCastle && move.newLocation == "g8" ->
+				newState = Map.put(game, :blackQueensideCastle, false)
+				newState1 = Map.put(newState, :blackKingsideCastle, false)
+				moveKing = performMove(newState1, move)
+				moveKingState = Map.put(moveKing, :whiteKingSpace, "g8")
+				performMove(moveKingState, %{ oldLocation: "h8", newLocation: "f8"})
+			game.turn == "w" ->
+				moveKingState = Map.put(game, :whiteKingSpace, move.newLocation)
+				performMove(moveKingState, move)
+			game.turn == "b" ->
+				moveKingState = Map.put(game, :blackKingSpace, move.newLocation)
+				performMove(moveKingState, move)
 		end
 	end
 
 	# Must set enPassantSquare, check for promotion
 	def pawnMove(game, move) do
-
+		oldLocation = String.to_atom(move.oldLocation)
+		newLocation = String.to_atom(move.newLocation)
+		position = game.position
+		piece = cond do
+			game.turn == "w" && String.at(move.newLocation, 1) == "8" ->
+				"wQ"
+			game.turn == "w" && String.at(move.newLocation, 1) == "8" ->
+				"wQ"
+			game.turn == "b" && String.at(move.newLocation, 1) == "1" ->
+				"bQ"
+			game.turn == "b" && String.at(move.newLocation, 1) == "1" ->
+				"bQ"
+			true ->
+				position[oldLocation]
+		end
+		removePiece = Map.delete(position, oldLocation)
+		newPosition = Map.put(removePiece, newLocation, piece)
+		newGameState = Map.put(game, :position, newPosition)
+		newGameState
 	end
 
 	###################################################################################
@@ -225,7 +284,7 @@ defmodule Memory.Game do
 
 	# Will need to run a helper function to make sure king isn"t moving into check
 	# TODO-- Make sure king isnt castling through check
-	def isLegalKingMove(game, targetSpace, startSpace, color) do
+	def isLegalKingMove(game, targetSpace, startSpace, color, inCheck) do
 		files = "abcdefgh"
 		position = game.position
 		# king
@@ -237,25 +296,25 @@ defmodule Memory.Game do
 		targetFileIndex = elem(:binary.match(files, targetFileString), 0)
 		targetRank = String.to_integer(String.at(targetSpace, 1))
 		cond do
-			startSpace == "e1" && targetSpace == "g1" ->
+			startSpace == "e1" && targetSpace == "g1" && !inCheck ->
 				if color == "w" && game.whiteKingsideCastle do
 					spaceAvailable(position, "f1", color) && spaceAvailable(position, "g1", color)
 				else
 				false
 				end
-			startSpace == "e1" && targetSpace == "c1" ->
+			startSpace == "e1" && targetSpace == "c1" && !inCheck ->
 				if color == "w" && game.whiteQueensideCastle do
 					spaceAvailable(position, "d1", color) && spaceAvailable(position, "c1", color) && spaceAvailable(position, "b1", color)
 				else
 				false
 				end
-			startSpace == "e8" && targetSpace == "g8" ->
+			startSpace == "e8" && targetSpace == "g8" && !inCheck ->
 				if color == "b" && game.blackKingsideCastle do
 					spaceAvailable(position, "f8", color) && spaceAvailable(position, "g8", color)
 				else
 				false
 				end
-			startSpace == "e8" && targetSpace == "c8" ->
+			startSpace == "e8" && targetSpace == "c8" && !inCheck ->
 				if color == "b" && game.blackQueensideCastle do
 					spaceAvailable(position, "d8", color) && spaceAvailable(position, "c8", color) && spaceAvailable(position, "b8", color)
 				else
@@ -470,21 +529,13 @@ defmodule Memory.Game do
 		moves
 	end	
 
-	########################################################################
-	# May need functions like these to figure out if king is in check/mate #
-	########################################################################
-
-	# def getAllLegalBishopMoves(position, color) do
-		
-	# end
-
 	######################
 	# GAME STATE HELPERS #
 	######################
 	
 	# Return full game state 
 	def checkGameState(game) do
-		kingSpace = if game.turn == "w" do
+		kingSpace = if game.turn == "b" do
 			game.whiteKingSpace
 		else
 			game.blackKingSpace
@@ -527,7 +578,7 @@ defmodule Memory.Game do
 						end)
 					piece == "K" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalKingMove(position, x, key, color)
+							isLegalKingMove(position, x, key, color, isCheck(position, color, kingSpace))
 						end)
 				end
 			end 
