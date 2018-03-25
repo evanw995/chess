@@ -130,6 +130,8 @@ defmodule Memory.Game do
 	def kingMove(game, move) do
 		castleGameState = cond do
 			# place holder
+			true ->
+				game
 		end
 	end
 
@@ -222,6 +224,7 @@ defmodule Memory.Game do
 	end
 
 	# Will need to run a helper function to make sure king isn"t moving into check
+	# TODO-- Make sure king isnt castling through check
 	def isLegalKingMove(game, targetSpace, startSpace, color) do
 		files = "abcdefgh"
 		position = game.position
@@ -277,14 +280,14 @@ defmodule Memory.Game do
 
 	# Lists possible spaces a knight can move to (does not account for whether or not the spaces are occupied)
 	def listAllKnightMoves(space) do
-		space1 = [changeFile(changeRank(space, 1) 2)]
-		space2 = [changeFile(changeRank(space, -1) 2)]
-		space3 = [changeFile(changeRank(space, 1) -2)]
-		space4 = [changeFile(changeRank(space, -1) -2)]
-		space5 = [changeFile(changeRank(space, 2) 1)]
-		space6 = [changeFile(changeRank(space, 2) -1)]
-		space7 = [changeFile(changeRank(space, -2) 1)]
-		space8 = [changeFile(changeRank(space, -2) -1)]
+		space1 = [changeFile(changeRank(space, 1), 2)]
+		space2 = [changeFile(changeRank(space, -1), 2)]
+		space3 = [changeFile(changeRank(space, 1), -2)]
+		space4 = [changeFile(changeRank(space, -1), -2)]
+		space5 = [changeFile(changeRank(space, 2), 1)]
+		space6 = [changeFile(changeRank(space, 2), -1)]
+		space7 = [changeFile(changeRank(space, -2), 1)]
+		space8 = [changeFile(changeRank(space, -2), -1)]
 		allSpaces = Enum.concat([space1, space2, space3, space4, space5, space6, space7, space8])
 		dedupSpaces = Enum.dedup(allSpaces)
 		dedupSpaces
@@ -508,23 +511,23 @@ defmodule Memory.Game do
 						end)
 					piece == "R" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalStraightMove(position, x, key, color, "")
+							isLegalStraightMove(position, x, key, color)
 						end)
 					piece == "N" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalKnightMove(position, x, key, color, "")
+							isLegalKnightMove(position, x, key, color)
 						end)
 					piece == "B" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalDiagonalMove(position, x, key, color, "")
+							isLegalDiagonalMove(position, x, key, color)
 						end)
 					piece == "Q" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalQueenMove(position, x, key, color, "")
+							isLegalQueenMove(position, x, key, color)
 						end)
 					piece == "K" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalKingMove(position, x, key, color, "")
+							isLegalKingMove(position, x, key, color)
 						end)
 				end
 			end 
