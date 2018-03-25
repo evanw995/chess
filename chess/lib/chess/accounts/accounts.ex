@@ -19,6 +19,7 @@ defmodule Chess.Accounts do
   """
   def list_users do
     Repo.all(User)
+    |> Enum.sort(&(&1.wins >= &2.wins))
   end
 
   @doc """
