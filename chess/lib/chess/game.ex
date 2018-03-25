@@ -105,7 +105,23 @@ defmodule Memory.Game do
 		removePiece = Map.delete(position, oldLocation)
 		newPosition = Map.put(removePiece, newLocation, piece)
 		newGameState = Map.put(game, :position, newPosition)
-		newGameState
+		newGameState1 = Map.put(game, :enPassantSquare, "")
+		newGameState1
+	end
+
+	# Must nullify that side castling
+	def rookMove(game, move) do
+
+	end
+
+	# Must handle castling and set castling rights
+	def kingMove(game, move) do
+
+	end
+
+	# Must set enPassantSquare, check for promotion
+	def pawnMove(game, move) do
+
 	end
 
 	###################################################################################
@@ -192,7 +208,6 @@ defmodule Memory.Game do
 	end
 
 	# Will need to run a helper function to make sure king isn"t moving into check
-	# Will also need to check for castling case-- hard code spaces?
 	def isLegalKingMove(game, targetSpace, startSpace, color) do
 		files = "abcdefgh"
 		position = game.position
@@ -442,23 +457,7 @@ defmodule Memory.Game do
 	# May need functions like these to figure out if king is in check/mate #
 	########################################################################
 
-	# def getLegalBishopMoves(position, color) do
-		
-	# end
-	
-	# def getLegalKnightMoves(position, color) do
-		
-	# end
-
-	# def getLegalRookMoves(position, color) do
-		
-	# end
-
-	# def getLegalQueenMoves(position, color) do
-		
-	# end
-
-	# def getLegalKingMoves(position, color) do
+	# def getAllLegalBishopMoves(position, color) do
 		
 	# end
 
@@ -479,28 +478,84 @@ defmodule Memory.Game do
 		newState1
 	end
 
+	# Determine whether given color has any legal moves
+	def hasLegalMoves(position, color, kingSpace) do
+		enemyColor = enemyColor(color)
+		pieces = Map.to_list(position)
+		# king = "#{color}K"
+		moves = Enum.map(pieces, fn({k, v}) ->
+			if String.at(v, 0) == color do
+				piece = String.at(v, 1)
+				key = to_string(k)
+				cond do
+					piece == "P" ->
+						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
+							isLegalPawnMove(position, x, key, color, "")
+						end)
+					piece == "R" ->
+						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
+							isLegalStraightMove(position, x, key, color, "")
+						end)
+					piece == "N" ->
+						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
+							isLegalKnightMove(position, x, key, color, "")
+						end)
+					piece == "B" ->
+						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
+							isLegalDiagonalMove(position, x, key, color, "")
+						end)
+					piece == "Q" ->
+						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
+							isLegalQueenMove(position, x, key, color, "")
+						end)
+					piece == "K" ->
+						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
+							isLegalKingMove(position, x, key, color, "")
+						end)
+				end
+			end 
+		end)
+		anyMoves = Enum.map(moves, fn(x) -> 
+			Enum.member?(x, true)
+		end)
+		Enum.member?(anyMoves, true)
+	end
+
 	# Tough function: Determine whether king is in check
 	# - Check all opponent pieces and see if they could move to the king"s space
 	# Color is whose turn it is (white moving, see if white king is in check)
 	def isCheck(position, color, kingSpace) do
-		# placeholder
+		
 		enemyColor = enemyColor(color)
 		pieces = Map.to_list(position)
-		king = "#{color}K"
+		# king = "#{color}K"
 		checks = Enum.map(pieces, fn({k, v}) ->
 			if String.at(v, 0) == enemyColor do
 				piece = String.at(v, 1)
+				key = to_string(k)
 				cond do
 					piece == "P" ->
-						isLegalPawnMove(position, kingSpace, k, color, "")
+						isLegalPawnMove(position, kingSpace, key, color, "")
 					piece == "R" ->
-						isLegalStraightMove(position, kingSpace, k, color)
+						isLegalStraightMove(position, kingSpace, key, color)
 					piece == "N" ->
-						isLegalKnightMove(position, kingSpace, k, color)
+						isLegalKnightMove(position, kingSpace, key, color)
 					piece == "B" ->
-						isLegalDiagonalMove(position, kingSpace, k, color)
+						isLegalDiagonalMove(position, kingSpace, key, color)
 					piece == "Q" ->
-						isLegalQueenMove(position, kingSpace, k color)
+						isLegalQueenMove(position, kingSpace, key, color)
+					# Check to make sure cant move next to opponent king
+					piece == "K" ->
+						files = "abcdefgh"
+						# king
+						startFileString = String.at(key, 0)
+						startFileIndex = elem(:binary.match(files, startFileString), 0)
+						startRank = String.to_integer(String.at(key, 1))
+						# target
+						targetFileString = String.at(kingSpace, 0)
+						targetFileIndex = elem(:binary.match(files, targetFileString), 0)
+						targetRank = String.to_integer(String.at(kingSpace, 1))
+						(abs(startFileIndex - targetFileIndex) < 2 && abs(startRank - targetRank) < 2)
 				end
 			end 
 		end)
@@ -510,14 +565,12 @@ defmodule Memory.Game do
 	# Determines if the position is checkmate for given color
 	# If king is in check, validate whether king is in check after all possible moves for given color 
 	def isCheckMate(position, color, kingSpace) do
-		# placeholder
-		false
+		isCheck(position, color, kingSpace) && !hasLegalMoves(position, color, kingSpace)
 	end
 
 	# Opposite of checkmate function-- king is not in check, but all legal moves would place him in check
 	def isStaleMate(position, color, kingSpace) do
-		# placeholder
-		false
+		!isCheck(position, color, kingSpace) && !hasLegalMoves(position, color, kingSpace)
 	end
 
 	# Helper function
@@ -527,6 +580,26 @@ defmodule Memory.Game do
 			"b"
 		else
 			"w"
+		end
+	end
+
+	# Return an enum of every square on the board
+	def everySquareOnBoard(squares, file, rank) do
+		files = "abcdefgh"
+		fileIndex = elem(:binary.match(files, file), 0)
+		nextFile = cond do
+			file == "h" ->
+				"a"
+			true ->
+				String.at(files, fileIndex + 1)
+		end
+		cond do
+			rank == 8 && file == "h" ->
+				squares
+			file == "h" ->
+				everySquareOnBoard(Enum.concat([squares, ["#{file}#{rank}"]]), "a", rank + 1)
+			true ->
+				everySquareOnBoard(Enum.concat([squares, ["#{file}#{rank}"]]), nextFile, rank)
 		end
 	end
 
