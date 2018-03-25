@@ -3,15 +3,15 @@ defmodule Memory.Game do
     %{
       position: startPosition(),
       gameOver: false,
-      turn: 'w',
+      turn: "w",
       whiteKingsideCastle: true,
       blackKingsideCastle: true,
       whiteQueensideCastle: true,
       blackQueensideCastle: true,
-			whiteKingSpace: 'e1', # Makes it easier to validate checks/checkmate
-			blackKingSpace: 'e8', # ^^^
+			whiteKingSpace: "e1", # Makes it easier to validate checks/checkmate
+			blackKingSpace: "e8", # ^^^
       inCheck: false,
-      enPassantSquare: '' # If a pawn moves two spaces, set this to the space it skips over. 
+      enPassantSquare: "" # If a pawn moves two spaces, set this to the space it skips over. 
 													# Every other move will reset this back to empty string
     }
   end
@@ -36,11 +36,11 @@ defmodule Memory.Game do
     cond do
     	(color != game.turn) -> # Cannot move that color
 				game
-			(move.piece != game.position[:move.source]) -> # That piece isn't on that square, how did you even call this?
+			(move.piece != game.position[String.to_atom(move.source)]) -> # That piece isn"t on that square, how did you even call this?
 				game
-			(move.newLocation == move.oldLocation) -> # That's not a move!
+			(move.newLocation == move.oldLocation) -> # That"s not a move!
 				game
-			(piece == 'P') -> # Pawn move
+			(piece == "P") -> # Pawn move
 				if isLegalPawnMove(game.position, move.newLocation, move.oldLocation, color, game.enPassantSquare) do
 					pieceMovedGameState = performMove(game, move)
 					newGameState = checkGameState(pieceMovedGameState)
@@ -48,7 +48,7 @@ defmodule Memory.Game do
 				else
 					game 
 				end
-			(piece == 'R') -> # Rook move
+			(piece == "R") -> # Rook move
 				if isLegalStraightMove(game.position, move.newLocation, move.oldLocation, color) do
 					pieceMovedGameState = performMove(game, move)
 					newGameState = checkGameState(pieceMovedGameState)
@@ -56,7 +56,7 @@ defmodule Memory.Game do
 				else
 					game
 				end
-			(piece == 'B') -> # Bishop move
+			(piece == "B") -> # Bishop move
 				if isLegalDiagonalMove(game.position, move.newLocation, move.oldLocation, color) do
 					pieceMovedGameState = performMove(game, move)
 					newGameState = checkGameState(pieceMovedGameState)
@@ -64,7 +64,7 @@ defmodule Memory.Game do
 				else
 					game
 				end
-			(piece == 'N') -> # Knight move
+			(piece == "N") -> # Knight move
 				if isLegalKnightMove(game.position, move.newLocation, move.oldLocation, color) do
 					pieceMovedGameState = performMove(game, move)
 					newGameState = checkGameState(pieceMovedGameState)
@@ -72,7 +72,7 @@ defmodule Memory.Game do
 				else
 					game
 				end
-			(piece == 'Q') -> # Queen move
+			(piece == "Q") -> # Queen move
 				if isLegalQueenMove(game.position, move.newLocation, move.oldLocation, color) do
 					pieceMovedGameState = performMove(game, move)
 					newGameState = checkGameState(pieceMovedGameState)
@@ -80,7 +80,7 @@ defmodule Memory.Game do
 				else
 					game
 				end
-			(piece == 'K') -> # King move
+			(piece == "K") -> # King move
 				if isLegalKingMove(game, move.newLocation, move.oldLocation, color) do
 					pieceMovedGameState = performMove(game, move)
 					newGameState = checkGameState(pieceMovedGameState) # TODO: Check for checks on both sides, as king move could open a check on opponent
@@ -98,7 +98,14 @@ defmodule Memory.Game do
 	# - piece promotion (auto-queen or not?)
 	# - adding piece to target square, removing piece from source square
 	def performMove(game, move) do
-		game # return new game object
+		position = game.position
+		oldLocation = String.to_atom(move.oldLocation)
+		newLocation = String.to_atom(move.newLocation)
+		piece = position[oldLocation]
+		removePiece = Map.delete(position, oldLocation)
+		newPosition = Map.put(removePiece, newLocation, piece)
+		newGameState = Map.put(game, :position, newPosition)
+		newGameState
 	end
 
 	###################################################################################
@@ -113,11 +120,12 @@ defmodule Memory.Game do
 	def isLegalDiagonalMove(position, targetSpace, startSpace, color) do
 		diagonal = findCorrectDiagonal(startSpace, targetSpace)
 		size = Enum.count(diagonal)
+		targetSpaceKey = String.to_atom(targetSpace)
 		cond do
 			size == 0 ->
 				false # No diagonal contains target and start space, illegal move
-			Map.has_key?(position, targetSpace) -> # contains a piece on target spot
-				piece = position[:targetSpace]
+			Map.has_key?(position, targetSpaceKey) -> # contains a piece on target spot
+				piece = position[targetSpaceKey]
 				pieceColor = String.at(piece, 0)
 				index = Enum.find_index(diagonal, targetSpace) - 1
 				squares = Enum.slice(diagonal, 1..index)
@@ -137,11 +145,12 @@ defmodule Memory.Game do
 	def isLegalStraightMove(position, targetSpace, startSpace, color) do
 		straight = findCorrectStraight(startSpace, targetSpace)
 		size = Enum.count(straight)
+		targetSpaceKey = String.to_atom(targetSpace)
 		cond do
 			size == 0 ->
 				false # No straight contains target and start space, illegal move
-			Map.has_key?(position, targetSpace) -> # contains a piece on target spot
-				piece = position[:targetSpace]
+			Map.has_key?(position, targetSpaceKey) -> # contains a piece on target spot
+				piece = position[targetSpaceKey]
 				pieceColor = String.at(piece, 0)
 				index = Enum.find_index(straight, targetSpace) - 1
 				squares = Enum.slice(straight, 1..index)
@@ -160,11 +169,12 @@ defmodule Memory.Game do
 	# Return true if the given move is a legal knight move in the position
 	def isLegalKnightMove(position, targetSpace, startSpace, color) do
 		listKnightMoves = listAllKnightMoves(startSpace)
+		targetSpaceKey = String.to_atom(targetSpace)
 		cond do
 			!Enum.member?(listKnightMoves, targetSpace) -> # is not a valid move from current position
 				false
-			Map.has_key?(position, targetSpace) -> # contains a piece on target spot
-				piece = position[:targetSpace]
+			Map.has_key?(position, targetSpaceKey) -> # contains a piece on target spot
+				piece = position[targetSpaceKey]
 				pieceColor = String.at(piece, 0)
 				if (pieceColor == enemyColor(color)) do # Enemy piece
 					true
@@ -181,10 +191,10 @@ defmodule Memory.Game do
 		(isLegalStraightMove(position, targetSpace, startSpace, color) || isLegalDiagonalMove(position, targetSpace, startSpace, color))
 	end
 
-	# Will need to run a helper function to make sure king isn't moving into check
+	# Will need to run a helper function to make sure king isn"t moving into check
 	# Will also need to check for castling case-- hard code spaces?
 	def isLegalKingMove(game, targetSpace, startSpace, color) do
-		files = 'abcdefgh'
+		files = "abcdefgh"
 		position = game.position
 		# king
 		startFileString = String.at(startSpace, 0)
@@ -195,26 +205,26 @@ defmodule Memory.Game do
 		targetFileIndex = elem(:binary.match(files, targetFileString), 0)
 		targetRank = String.to_integer(String.at(targetSpace, 1))
 		cond do
-			startSpace == 'e1' && targetSpace == 'g1' ->
-				if color == 'w' && game.whiteKingsideCastle do
+			startSpace == "e1" && targetSpace == "g1" ->
+				if color == "w" && game.whiteKingsideCastle do
 					true
 				else
 				false
 				end
-			startSpace == 'e1' && targetSpace == 'c1' ->
-				if color == 'w' && game.whiteQueensideCastle do
+			startSpace == "e1" && targetSpace == "c1" ->
+				if color == "w" && game.whiteQueensideCastle do
 					true
 				else
 				false
 				end
-			startSpace == 'e8' && targetSpace == 'g8' ->
-				if color == 'b' && game.blackKingsideCastle do
+			startSpace == "e8" && targetSpace == "g8" ->
+				if color == "b" && game.blackKingsideCastle do
 					true
 				else
 				false
 				end
-			startSpace == 'e8' && targetSpace == 'c8' ->
-				if color == 'b' && game.blackQueensideCastle do
+			startSpace == "e8" && targetSpace == "c8" ->
+				if color == "b" && game.blackQueensideCastle do
 					true
 				else
 				false
@@ -223,7 +233,7 @@ defmodule Memory.Game do
 				if spaceAvailable(position, targetSpace, color) do
 					true
 				else
-					(String.at(position[:targetSpace], 0) != color)
+					(String.at(position[String.to_atom(targetSpace)], 0) != color)
 				end
 			true ->
 				false
@@ -258,6 +268,7 @@ defmodule Memory.Game do
 	# Return true if given enum of squares contains no pieces in game position
 	def containsNoPieces(squares, position) do
 		size = Enum.count(squares)
+		space = String.to_atom(Enum.at(squares, 0))
 		cond do
 			size == 0 -> # No more items to check, return true
 				true
@@ -312,7 +323,7 @@ defmodule Memory.Game do
 
 	# Returns the enum of squares in given direction from space
 	def getSquares(space, fileDirection, rankDirection, squares) do
-		files = 'abcdefgh'
+		files = "abcdefgh"
 		fileString = String.at(space, 0)
 		fileIndex = elem(:binary.match(files, fileString), 0)
 		rank = String.to_integer(String.at(space, 1))
@@ -340,7 +351,7 @@ defmodule Memory.Game do
 		rank = String.to_integer(rankString)
 		cond do
 			(rank + direction < 1) || (rank + direction > 8) -> # bad case
-				space
+				""
 			true ->
 				newRank = rank + direction
 				newRankString = Integer.to_string(newRank)
@@ -352,14 +363,14 @@ defmodule Memory.Game do
 	# Changes files. Direction 1 = towards H file, -1 = towards A file
 	# Return string of new space
 	def changeFile(space, direction) do
-		files = 'abcdefgh'
+		files = "abcdefgh"
 		fileString = String.at(space, 0)
 		fileIndexMatch = :binary.match(files, fileString)
 		fileIndex = elem(fileIndexMatch, 0)
 		rankString = String.at(space, 1)
 		cond do
 			(fileIndex + direction < 0) || (fileIndex + direction > 7) -> # bad case
-				space
+				""
 			true ->
 				newFileIndex = fileIndex + direction
 				newFile = String.at(files, newFileIndex)
@@ -371,7 +382,8 @@ defmodule Memory.Game do
 	
 	# Return true if the space is empty
 	def spaceAvailable(position, space, color) do
-		if Map.has_key?(position, space) do # Is this space in the position object
+		key = String.to_atom(space)
+		if Map.has_key?(position, key) do # Is this space in the position object
 			false
 		else # Must be empty
 			true
@@ -385,15 +397,15 @@ defmodule Memory.Game do
 		moves = []
 
 		cond do
-			color == 'w' -> # white pieces
+			color == "w" -> # white pieces
 				forwardSpace = changeRank(startSpace, 1)
 				leftCapture = changeRank(changeFile(startSpace, -1), 1)
-				leftCapture = changeRank(changeFile(startSpace, 1), 1)
+				rightCapture = changeRank(changeFile(startSpace, 1), 1)
 				doubleSpace = changeRank(startSpace, 2)
 			true -> # black pieces
 				forwardSpace = changeRank(startSpace, -1)
 				leftCapture = changeRank(changeFile(startSpace, -1), -1)
-				leftCapture = changeRank(changeFile(startSpace, 1), -1)
+				rightCapture = changeRank(changeFile(startSpace, 1), -1)
 				doubleSpace = changeRank(startSpace, -2)
 		end
 		# Check forward moves
@@ -403,21 +415,24 @@ defmodule Memory.Game do
 				end
 			moves = Enum.concat([moves, [forwardSpace]])
 		end
+
+		leftCaptureKey = String.to_atom(leftCapture)
+		rightCaptureKey = String.to_atom(rightCapture)
 		# Check captures
 		cond do
-			position[:leftCapture] != nil ->
-				if String.at(position[:leftCapture], 0) == enemyColor(color) do
+			(position[leftCaptureKey] != nil) && (leftCapture != "") ->
+				if String.at(position[leftCaptureKey], 0) == enemyColor(color) do
 					moves = Enum.concat([moves, [leftCapture]])
 				end
-			enPassantSquare == leftCapture ->
+			(enPassantSquare == leftCapture) && (leftCapture != "") ->
 				moves = Enum.concat([moves, [leftCapture]])	
 		end
 		cond do
-			position[:rightCapture] != nil ->
-				if String.at(position[:rightCapture], 0) == enemyColor(color) do
+			(position[rightCaptureKey] != nil) && (rightCapture != "") ->
+				if String.at(position[rightCaptureKey], 0) == enemyColor(color) do
 					moves = Enum.concat([moves, [rightCapture]])
 				end
-			enPassantSquare == rightCapture ->
+			(enPassantSquare == rightCapture) && (rightCapture != "") ->
 				moves = Enum.concat([moves, [rightCapture]])	
 		end
 		moves
@@ -453,7 +468,7 @@ defmodule Memory.Game do
 	
 	# Return full game state 
 	def checkGameState(game) do
-		kingSpace = if game.turn == 'w' do
+		kingSpace = if game.turn == "w" do
 			game.whiteKingSpace
 		else
 			game.blackKingSpace
@@ -465,26 +480,26 @@ defmodule Memory.Game do
 	end
 
 	# Tough function: Determine whether king is in check
-	# - Check all opponent pieces and see if they could move to the king's space
+	# - Check all opponent pieces and see if they could move to the king"s space
 	# Color is whose turn it is (white moving, see if white king is in check)
 	def isCheck(position, color, kingSpace) do
 		# placeholder
 		enemyColor = enemyColor(color)
 		pieces = Map.to_list(position)
-		king = '#{color}K'
+		king = "#{color}K"
 		checks = Enum.map(pieces, fn({k, v}) ->
 			if String.at(v, 0) == enemyColor do
 				piece = String.at(v, 1)
 				cond do
-					piece == 'P' ->
-						isLegalPawnMove(position, kingSpace, k, color, '')
-					piece == 'R' ->
+					piece == "P" ->
+						isLegalPawnMove(position, kingSpace, k, color, "")
+					piece == "R" ->
 						isLegalStraightMove(position, kingSpace, k, color)
-					piece == 'N' ->
+					piece == "N" ->
 						isLegalKnightMove(position, kingSpace, k, color)
-					piece == 'B' ->
+					piece == "B" ->
 						isLegalDiagonalMove(position, kingSpace, k, color)
-					piece == 'Q' ->
+					piece == "Q" ->
 						isLegalQueenMove(position, kingSpace, k color)
 				end
 			end 
@@ -508,10 +523,10 @@ defmodule Memory.Game do
 	# Helper function
 	# Return opponents color
 	def enemyColor(color) do
-		if color == 'w' do
-			'b'
+		if color == "w" do
+			"b"
 		else
-			'w'
+			"w"
 		end
 	end
 
@@ -523,38 +538,38 @@ defmodule Memory.Game do
 	# when moving pieces from squares, be sure to delete the key from the map 
   def startPosition() do
     %{
-        'a1': 'wR',
-        'b1': 'wN',
-        'c1': 'wB',
-        'd1': 'wQ',
-        'e1': 'wK',
-        'f1': 'wB',
-        'g1': 'wN',
-        'h1': 'wR',
-        'a2': 'wP',
-        'b2': 'wP',
-        'c2': 'wP',
-        'd2': 'wP',
-        'e2': 'wP',
-        'f2': 'wP',
-        'g2': 'wP',
-        'h2': 'wP',
-        'a8': 'bR',
-        'b8': 'bN',
-        'c8': 'bB',
-        'd8': 'bQ',
-        'e8': 'bK',
-        'f8': 'bB',
-        'g8': 'bN',
-        'h8': 'bR',
-        'a7': 'bP',
-        'b7': 'bP',
-        'c7': 'bP',
-        'd7': 'bP',
-        'e7': 'bP',
-        'f7': 'bP',
-        'g7': 'bP',
-        'h7': 'bP'
+        a1: "wR",
+        b1: "wN",
+        c1: "wB",
+        d1: "wQ",
+        e1: "wK",
+        f1: "wB",
+        g1: "wN",
+        h1: "wR",
+        a2: "wP",
+        b2: "wP",
+        c2: "wP",
+        d2: "wP",
+        e2: "wP",
+        f2: "wP",
+        g2: "wP",
+        h2: "wP",
+        a8: "bR",
+        b8: "bN",
+        c8: "bB",
+        d8: "bQ",
+        e8: "bK",
+        f8: "bB",
+        g8: "bN",
+        h8: "bR",
+        a7: "bP",
+        b7: "bP",
+        c7: "bP",
+        d7: "bP",
+        e7: "bP",
+        f7: "bP",
+        g7: "bP",
+        h7: "bP"
     }
   end
 
@@ -563,7 +578,7 @@ defmodule Memory.Game do
 
   # def startPosition() do
   #   %{
-  #       'RNBQKBNR/PPPPPPPP/8/8/8/8/PPPPPPPP/RNBQKBNR'
+  #       "RNBQKBNR/PPPPPPPP/8/8/8/8/PPPPPPPP/RNBQKBNR"
   #   }
   # end
 
