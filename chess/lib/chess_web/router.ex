@@ -28,8 +28,10 @@ defmodule ChessWeb.Router do
   scope "/", ChessWeb do
     pipe_through :browser # Use the default browser stack
     resources "/users", UserController
+    resources "/games", GameController
 
     get "/", PageController, :index
+    get "/feed", PageController, :feed
     #Taken from Nat Tuck's lecture notes
     post "/session", SessionController, :create
     delete "/session", SessionController, :delete

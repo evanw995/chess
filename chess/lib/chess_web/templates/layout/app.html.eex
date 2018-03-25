@@ -20,7 +20,7 @@
             <%= link "Users", to: "/users" %>
           </div>
           <div class="col-1">
-            <%= link "Games", to: "/games" %>
+            <%= link "Games", to: "/feed" %>
           </div>
           <div class="col-3 offset-6">
             <p>
