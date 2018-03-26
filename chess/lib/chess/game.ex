@@ -16,10 +16,6 @@ defmodule Chess.Game do
     }
   end
 
-	## Game object logic: 
-	## gameOver = true, inCheck = false would signify a draw
-	## gameOver = true, inCheck = true would signify checkmate (use turn to determine who is winner/loser)
-
   def client_view(game) do
     %{
       position: game.position, # Required to play game
