@@ -16,7 +16,7 @@ defmodule ChessWeb.GamesChannel do
   end
 
   def handle_in("move", %{ "oldLocation" => oldLocation, "newLocation" => newLocation, "piece" => piece }, socket) do
-    game = Game.move(socket.assigns[:game], move)
+    game = Game.move(socket.assigns[:game], oldLocation, newLocation, piece)
     Chess.GameBackup.save(socket.assigns[:name], game)
     socket = assign(socket, :game, game)
     {:reply, {:ok, %{ "game" => Game.client_view(game)}}, socket}
