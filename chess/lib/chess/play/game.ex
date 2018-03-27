@@ -14,7 +14,7 @@ defmodule Chess.Play.Game do
   @doc false
   def changeset(game, attrs) do
     game
-    |> cast(attrs, [:name, :white_id])
+    |> cast(attrs, [:name, :white_id, :black_id])
     |> validate_required([:name, :white_id])
   end
 end

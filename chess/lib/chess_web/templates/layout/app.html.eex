@@ -17,19 +17,22 @@
       <div class="row">
         <%= if @current_user do %>
           <div class="col-1">
-            <%= link "Users", to: "/users" %>
+            <%= link "Users", to: "/users", class: "btn btn-default" %>
           </div>
           <div class="col-1">
-            <%= link "Games", to: "/feed" %>
+            <%= link "Join", to: "/feed", class: "btn btn-default" %>
           </div>
-          <div class="col-3 offset-6">
+          <div class="col-2">
+            <%= link "My Games", to: page_path(@conn, :my_games, @current_user), class: "btn btn-default"%>
+          </div>
+          <div class="col-3 offset-4">
             <p>
-              User: <%= @current_user.name %> | <%= link "Log Out", to: "/session", method: :delete %>
+              User: <%= @current_user.name %> | <%= link "Log Out", to: "/session", method: :delete, class: "btn btn-default" %>
             </p>
           </div>
         <% else %>
           <div class="col-1 offset-11">
-            <%= link "Log In", to: "/", method: :get %>
+            <%= link "Log In", to: "/", method: :get, class: "btn btn-primary" %>
           </div>
         <% end %>
       </div>

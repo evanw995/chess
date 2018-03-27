@@ -1,0 +1,17 @@
+<!-- Taken from Nat Tuck's lecture notes -->
+<h1>Your Games</h1>
+
+<%= Enum.map @games, fn game -> %>
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title"><%= game.name %></h4>
+          <p>Creator: <%= game.white.name %></p>
+
+          <%= link "Play", to: game_path(@conn, :show, game), class: "btn btn-primary btn-sm" %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

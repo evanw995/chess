@@ -18,7 +18,7 @@ import "phoenix_html"
 // Local files can be imported directly using relative
 // paths "./socket" or full ones "web/static/js/socket".
 
-// import socket from "./socket"
+import socket from "./socket"
 // Taken from Nat Tuck's lecture notes
 import $ from "jquery";
 
@@ -55,3 +55,21 @@ function init_join() {
 }
 
 $(init_join);
+
+import run_gamePage from "./gamePage";
+
+function play() {
+    if (document.getElementById('game')) {
+        let channel = socket.channel("games:" + window.game_name, {});
+        channel.join()
+            .receive("ok", resp => {
+                let root = document.getElementById('game');
+                run_gamePage(root, channel);
+
+                console.log("games:" + window.game_name + " joined successfully", resp);
+            })
+            .receive("error", resp => { console.log("Unable to join", resp); });
+    }
+}
+
+$(play);

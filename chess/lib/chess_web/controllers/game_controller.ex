@@ -71,7 +71,6 @@ defmodule ChessWeb.GameController do
 
     case Play.update_game(game, game_params) do
       {:ok, game} ->
-        raise game
         conn
         |> put_flash(:info, "Game updated successfully.")
         |> redirect(to: game_path(conn, :show, game))

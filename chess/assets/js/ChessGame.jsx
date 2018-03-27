@@ -9,8 +9,8 @@ export class ChessGame extends React.Component {
         this.channel = props.channel;
         this.state = {
             position: [],
-            gameOver: false, 
-            turn: 'w', 
+            gameOver: false,
+            turn: 'w',
             inCheck: false
         }
 

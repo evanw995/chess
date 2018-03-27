@@ -25,7 +25,7 @@
 
         <%= form_for @changeset, game_path(@conn, :update, game), fn f -> %>
           <div class="form-group">
-            <%= hidden_input f, :black_id, value: "@current_user.id", class: "form-control" %>
+            <%= hidden_input f, :black_id, value: @current_user.id, class: "form-control" %>
             <%= error_tag f, :black_id %>
           </div>
 

@@ -33,6 +33,7 @@ defmodule ChessWeb.Router do
 
     get "/", PageController, :index
     get "/feed", PageController, :feed
+    get "/my_games/:id", PageController, :my_games
     #Taken from Nat Tuck's lecture notes
     post "/session", SessionController, :create
     delete "/session", SessionController, :delete

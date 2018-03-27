@@ -1,23 +1,16 @@
-<h2>Show Game</h2>
+<h2><%= @game.name %></h2>
 
-<ul>
+<script>
+  window.game_name = "<%= @game.name %>";
+</script>
 
-  <li>
-    <strong>Name:</strong>
-    <%= @game.name %>
-  </li>
-
-  <li>
-    <strong>White:</strong>
-    <%= @white %>
-  </li>
-
-  <li>
-    <strong>Black:</strong>
-    <%= @black %>
-  </li>
-
-</ul>
+<div class="row">
+  <div class="col">
+    <div id="game">
+      <p>Game not displaying...</p>
+    </div>
+  </div>
+</div>
 
 <span><%= link "Edit", to: game_path(@conn, :edit, @game) %></span>
 <span><%= link "Back", to: game_path(@conn, :index) %></span>
