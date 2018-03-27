@@ -1,6 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import ChessBoard from 'chessboardjs';
+import $ from 'jquery';
+
+window.$ = $
+window.jQuery = $
 
 export class ChessGame extends React.Component {
 
@@ -20,7 +24,7 @@ export class ChessGame extends React.Component {
 
         // handleGuess must be bound in constructor
         // in order to pass down to child components (Blocks) successfully
-        this.handleGuess = this.handleGuess.bind(this);
+        // this.handleGuess = this.handleGuess.bind(this);
     }
 
     gotView(view) {
@@ -45,13 +49,15 @@ export class ChessGame extends React.Component {
             onDragMove: onDragMove,
             sparePieces: true
         };
-        var board = ChessBoard('board', cfg);
+        var board = ChessBoard("board", cfg);
         // <div id="placeholder">
         //         Placeholder.
         //     </div>
         
         return (
-            <div id="board" style="width: 400px"></div>
+            <div>
+                <div id="board" style="width: 400px"></div>
+            </div>
         );
     }
 }
