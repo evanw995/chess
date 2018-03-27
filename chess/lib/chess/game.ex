@@ -112,9 +112,9 @@ defmodule Chess.Game do
 				fileString = String.at(oldLocation, 0)
 				middleSquare = (oldLocationRank + newLocationRank) / 2
 				middleSquareString = Integer.to_string(middleSquare)
-				Map.put(game, :enPassantSquare, "#{fileString}#{middleSquareString}")
+				Map.put(newGameState, :enPassantSquare, "#{fileString}#{middleSquareString}")
 			true ->
-				Map.put(game, :enPassantSquare, "")
+				Map.put(newGameState, :enPassantSquare, "")
 		end
 		newGameState1
 	end
@@ -294,30 +294,30 @@ defmodule Chess.Game do
 		cond do
 			startSpace == "e1" && targetSpace == "g1" && !inCheck ->
 				if color == "w" && game.whiteKingsideCastle do
-					spaceAvailable(position, "f1", color) && spaceAvailable(position, "g1", color)
+					spaceAvailable(position, "f1") && spaceAvailable(position, "g1")
 				else
 				false
 				end
 			startSpace == "e1" && targetSpace == "c1" && !inCheck ->
 				if color == "w" && game.whiteQueensideCastle do
-					spaceAvailable(position, "d1", color) && spaceAvailable(position, "c1", color) && spaceAvailable(position, "b1", color)
+					spaceAvailable(position, "d1") && spaceAvailable(position, "c1") && spaceAvailable(position, "b1")
 				else
 				false
 				end
 			startSpace == "e8" && targetSpace == "g8" && !inCheck ->
 				if color == "b" && game.blackKingsideCastle do
-					spaceAvailable(position, "f8", color) && spaceAvailable(position, "g8", color)
+					spaceAvailable(position, "f8") && spaceAvailable(position, "g8")
 				else
 				false
 				end
 			startSpace == "e8" && targetSpace == "c8" && !inCheck ->
 				if color == "b" && game.blackQueensideCastle do
-					spaceAvailable(position, "d8", color) && spaceAvailable(position, "c8", color) && spaceAvailable(position, "b8", color)
+					spaceAvailable(position, "d8") && spaceAvailable(position, "c8") && spaceAvailable(position, "b8")
 				else
 				false
 				end
 			abs(startFileIndex - targetFileIndex) < 2 && abs(startRank - targetRank) < 2 -> # Move must be within one space in any direction
-				if spaceAvailable(position, targetSpace, color) do
+				if spaceAvailable(position, targetSpace) do
 					true
 				else
 					(String.at(position[String.to_atom(targetSpace)], 0) != color)
@@ -468,7 +468,7 @@ defmodule Chess.Game do
 	end
 	
 	# Return true if the space is empty
-	def spaceAvailable(position, space, color) do
+	def spaceAvailable(position, space) do
 		key = String.to_atom(space)
 		if Map.has_key?(position, key) do # Is this space in the position object
 			false
@@ -479,9 +479,8 @@ defmodule Chess.Game do
 
 	# TODO-- change this to fit format of others? (Use isLegalDiagonal/StraightMove()?)
 	def listLegalPawnMoves(position, color, startSpace, enPassantSquare) do
-		startRank = String.to_integer(String.at(startSpace, 1))
-		startFile = String.at(startSpace, 0)
-		moves = []
+		# startRank = String.to_integer(String.at(startSpace, 1))
+		# startFile = String.at(startSpace, 0)
 
 		cond do
 			color == "w" -> # white pieces
@@ -496,33 +495,66 @@ defmodule Chess.Game do
 				doubleSpace = changeRank(startSpace, -2)
 		end
 		# Check forward moves
-		if spaceAvailable(position, forwardSpace, color) do
-				if spaceAvailable(position, doubleSpace, color) do
-					moves = Enum.concat([moves, [doubleSpace]])
-				end
-			moves = Enum.concat([moves, [forwardSpace]])
+		moves = cond do 
+			spaceAvailable(position, forwardSpace) && spaceAvailable(position, doubleSpace) ->
+				moves = Enum.concat([moves, [forwardSpace], [doubleSpace]])
+			spaceAvailable(position, forwardSpace) ->
+				moves = Enum.concat([moves, [forwardSpace]])
+			true ->
+				[]
 		end
+
+		# if spaceAvailable(position, forwardSpace) do
+		# 		if spaceAvailable(position, doubleSpace) do
+		# 			moves = Enum.concat([moves, [doubleSpace]])
+		# 		end
+		# 	moves = Enum.concat([moves, [forwardSpace]])
+		# end
 
 		leftCaptureKey = String.to_atom(leftCapture)
 		rightCaptureKey = String.to_atom(rightCapture)
 		# Check captures
-		cond do
-			(position[leftCaptureKey] != nil) && (leftCapture != "") ->
-				if String.at(position[leftCaptureKey], 0) == enemyColor(color) do
-					moves = Enum.concat([moves, [leftCapture]])
-				end
-			(enPassantSquare == leftCapture) && (leftCapture != "") ->
-				moves = Enum.concat([moves, [leftCapture]])	
+		leftCapMoves = cond do
+			leftCapture == "" ->
+				moves
+			(position[leftCaptureKey] != nil) && String.at(position[leftCaptureKey], 0) == enemyColor(color) ->
+				Enum.concat([moves, [leftCapture]])
+			(enPassantSquare == leftCapture) ->
+				Enum.concat([moves, [leftCapture]])
+			true ->
+				moves
 		end
-		cond do
-			(position[rightCaptureKey] != nil) && (rightCapture != "") ->
-				if String.at(position[rightCaptureKey], 0) == enemyColor(color) do
-					moves = Enum.concat([moves, [rightCapture]])
-				end
-			(enPassantSquare == rightCapture) && (rightCapture != "") ->
-				moves = Enum.concat([moves, [rightCapture]])	
+
+		# cond do
+		# 	(position[leftCaptureKey] != nil) && (leftCapture != "") ->
+		# 		if String.at(position[leftCaptureKey], 0) == enemyColor(color) do
+		# 			moves = Enum.concat([moves, [leftCapture]])
+		# 		end
+		# 	(enPassantSquare == leftCapture) && (leftCapture != "") ->
+		# 		moves = Enum.concat([moves, [leftCapture]])	
+		# end
+
+		rightCapMoves = cond do
+			leftCapture == "" ->
+				leftCapMoves
+			(position[leftCaptureKey] != nil) && String.at(position[leftCaptureKey], 0) == enemyColor(color) ->
+				Enum.concat([leftCapMoves, [leftCapture]])
+			(enPassantSquare == leftCapture) ->
+				Enum.concat([leftCapMoves, [leftCapture]])
+			true ->
+				leftCapMoves
 		end
-		moves
+
+		# cond do
+		# 	(position[rightCaptureKey] != nil) && (rightCapture != "") ->
+		# 		if String.at(position[rightCaptureKey], 0) == enemyColor(color) do
+		# 			moves = Enum.concat([moves, [rightCapture]])
+		# 		end
+		# 	(enPassantSquare == rightCapture) && (rightCapture != "") ->
+		# 		moves = Enum.concat([moves, [rightCapture]])	
+		# end
+
+		rightCapMoves
 	end	
 
 	######################
@@ -544,9 +576,7 @@ defmodule Chess.Game do
 
 	# Determine whether given color has any legal moves
 	def hasLegalMoves(position, color, kingSpace) do
-		enemyColor = enemyColor(color)
 		pieces = Map.to_list(position)
-		# king = "#{color}K"
 		moves = Enum.map(pieces, fn({k, v}) ->
 			if String.at(v, 0) == color do
 				piece = String.at(v, 1)
@@ -709,14 +739,5 @@ defmodule Chess.Game do
         h7: "bP"
     }
   end
-
-	## Could use FEN string to represent game object (may look cleaner in this function)
-	## but code to check and enfore rules will be more complicated.
-
-  # def startPosition() do
-  #   %{
-  #       "RNBQKBNR/PPPPPPPP/8/8/8/8/PPPPPPPP/RNBQKBNR"
-  #   }
-  # end
 
 end
