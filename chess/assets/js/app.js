@@ -19,3 +19,39 @@ import "phoenix_html"
 // paths "./socket" or full ones "web/static/js/socket".
 
 // import socket from "./socket"
+// Taken from Nat Tuck's lecture notes
+import $ from "jquery";
+
+function addBlack(game_id) {
+    let text = JSON.stringify({
+        game: {
+            black_id: current_user_id
+        },
+    });
+
+    $.ajax(game_path, {
+        method: "post",
+        dataType: "json",
+        contentType: "application/json; charset=UTF-8",
+        data: text
+    });
+}
+
+function join_click(ev) {
+    let btn = $(ev.target);
+    let game_id = btn.data('game-id');
+
+    console.log(current_user_id);
+    console.log(game_id);
+    addBlack(game_id);
+}
+
+function init_join() {
+    if (!$('.join-button')) {
+        return;
+    }
+
+    $(".join-button").click(join_click);
+}
+
+$(init_join);
