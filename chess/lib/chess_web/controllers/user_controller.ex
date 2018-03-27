@@ -1,8 +1,13 @@
 defmodule ChessWeb.UserController do
   use ChessWeb, :controller
 
+  import Ecto.Query, only: [from: 2]
+
   alias Chess.Accounts
   alias Chess.Accounts.User
+  alias Chess.Play
+  alias Chess.Play.Game
+  alias Chess.Repo
 
   def index(conn, _params) do
     users = Accounts.list_users()
@@ -54,10 +59,16 @@ defmodule ChessWeb.UserController do
 
   def delete(conn, %{"id" => id}) do
     user = Accounts.get_user!(id)
+
+    id_int = String.to_integer(id)
+    from(g in Game, where: (g.black_id == ^id_int or
+      g.white_id == ^id_int))
+      |> Repo.delete_all
+
     {:ok, _user} = Accounts.delete_user(user)
 
     conn
     |> put_flash(:info, "User deleted successfully.")
-    |> redirect(to: user_path(conn, :index))
+    |> redirect(to: page_path(conn, :index))
   end
 end

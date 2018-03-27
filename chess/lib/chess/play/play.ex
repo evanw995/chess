@@ -19,7 +19,6 @@ defmodule Chess.Play do
   """
   def list_games do
     Repo.all(Game)
-    |> Repo.preload(:black)
   end
 
   # List games with only one user where the user is not

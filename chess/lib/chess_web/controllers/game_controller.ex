@@ -6,8 +6,7 @@ defmodule ChessWeb.GameController do
   alias Chess.Accounts
 
   def index(conn, _params) do
-    games = Play.list_games()
-    render(conn, "index.html", games: games)
+    render(conn, "index.html")
   end
 
   def new(conn, _params) do
