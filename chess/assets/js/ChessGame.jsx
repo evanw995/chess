@@ -43,21 +43,28 @@ export class ChessGame extends React.Component {
                             handleMove(newLocation, oldLocation, piece);
             };
 
-        var cfg = {
-            draggable: true,
-            position: 'start',
-            onDragMove: onDragMove,
-            sparePieces: true
-        };
-        var board = ChessBoard("board", cfg);
+        
+        // var board = ChessBoard("board", cfg);
         // <div id="placeholder">
         //         Placeholder.
         //     </div>
         
         return (
             <div>
-                <div id="board" style="width: 400px"></div>
+                <div id="board1" style="width: 400px"></div>
             </div>
         );
+    }
+
+    componentDidMount() {
+        var cfg = {
+            draggable: true,
+            position: 'start',
+            onDragMove: onDragMove,
+            sparePieces: true
+        };
+        setTimeout(function() {
+            var board1 = new ChessBoard('board1', 'start');
+        }, 0);
     }
 }
