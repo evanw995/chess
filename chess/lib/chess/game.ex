@@ -479,40 +479,45 @@ defmodule Chess.Game do
 
 	# TODO-- change this to fit format of others? (Use isLegalDiagonal/StraightMove()?)
 	def listLegalPawnMoves(position, color, startSpace, enPassantSquare) do
-		# startRank = String.to_integer(String.at(startSpace, 1))
-		# startFile = String.at(startSpace, 0)
-
-		cond do
-			color == "w" -> # white pieces
-				forwardSpace = changeRank(startSpace, 1)
-				leftCapture = changeRank(changeFile(startSpace, -1), 1)
-				rightCapture = changeRank(changeFile(startSpace, 1), 1)
-				doubleSpace = changeRank(startSpace, 2)
-			true -> # black pieces
-				forwardSpace = changeRank(startSpace, -1)
-				leftCapture = changeRank(changeFile(startSpace, -1), -1)
-				rightCapture = changeRank(changeFile(startSpace, 1), -1)
-				doubleSpace = changeRank(startSpace, -2)
+		forwardSpace = cond do
+			color == "w" ->
+				changeRank(startSpace, 1)
+			true ->
+				changeRank(startSpace, -1)
 		end
+		doubleSpace = cond do
+			color == "w" ->
+				changeRank(startSpace, 2)
+			true ->
+				changeRank(startSpace, -2)
+		end
+		leftCapture = cond do
+			color == "w" ->
+				changeRank(changeFile(startSpace, -1), 1)
+			true ->
+				changeRank(changeFile(startSpace, -1), -1)
+		end
+		rightCapture = cond do
+			color == "w" ->
+				changeRank(changeFile(startSpace, 1), 1)
+			true ->
+				changeRank(changeFile(startSpace, 1), -1)
+		end
+		
+
 		# Check forward moves
 		moves = cond do 
 			spaceAvailable(position, forwardSpace) && spaceAvailable(position, doubleSpace) ->
-				moves = Enum.concat([moves, [forwardSpace], [doubleSpace]])
+				Enum.concat([[forwardSpace], [doubleSpace]])
 			spaceAvailable(position, forwardSpace) ->
-				moves = Enum.concat([moves, [forwardSpace]])
+				[forwardSpace]
 			true ->
 				[]
 		end
 
-		# if spaceAvailable(position, forwardSpace) do
-		# 		if spaceAvailable(position, doubleSpace) do
-		# 			moves = Enum.concat([moves, [doubleSpace]])
-		# 		end
-		# 	moves = Enum.concat([moves, [forwardSpace]])
-		# end
-
 		leftCaptureKey = String.to_atom(leftCapture)
 		rightCaptureKey = String.to_atom(rightCapture)
+		
 		# Check captures
 		leftCapMoves = cond do
 			leftCapture == "" ->
@@ -525,34 +530,16 @@ defmodule Chess.Game do
 				moves
 		end
 
-		# cond do
-		# 	(position[leftCaptureKey] != nil) && (leftCapture != "") ->
-		# 		if String.at(position[leftCaptureKey], 0) == enemyColor(color) do
-		# 			moves = Enum.concat([moves, [leftCapture]])
-		# 		end
-		# 	(enPassantSquare == leftCapture) && (leftCapture != "") ->
-		# 		moves = Enum.concat([moves, [leftCapture]])	
-		# end
-
 		rightCapMoves = cond do
-			leftCapture == "" ->
+			rightCapture == "" ->
 				leftCapMoves
-			(position[leftCaptureKey] != nil) && String.at(position[leftCaptureKey], 0) == enemyColor(color) ->
-				Enum.concat([leftCapMoves, [leftCapture]])
-			(enPassantSquare == leftCapture) ->
-				Enum.concat([leftCapMoves, [leftCapture]])
+			(position[rightCaptureKey] != nil) && String.at(position[rightCaptureKey], 0) == enemyColor(color) ->
+				Enum.concat([leftCapMoves, [rightCapture]])
+			(enPassantSquare == rightCapture) ->
+				Enum.concat([leftCapMoves, [rightCapture]])
 			true ->
 				leftCapMoves
 		end
-
-		# cond do
-		# 	(position[rightCaptureKey] != nil) && (rightCapture != "") ->
-		# 		if String.at(position[rightCaptureKey], 0) == enemyColor(color) do
-		# 			moves = Enum.concat([moves, [rightCapture]])
-		# 		end
-		# 	(enPassantSquare == rightCapture) && (rightCapture != "") ->
-		# 		moves = Enum.concat([moves, [rightCapture]])	
-		# end
 
 		rightCapMoves
 	end	
