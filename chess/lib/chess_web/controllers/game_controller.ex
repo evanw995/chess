@@ -87,9 +87,4 @@ defmodule ChessWeb.GameController do
     |> put_flash(:info, "Game deleted successfully.")
     |> redirect(to: game_path(conn, :index))
   end
-
-  def play_game(conn, %{"game_id" => game_id}) do
-    game = Play.get_game!(game_id)
-    render(conn, "play_game.html", game: game)
-  end
 end

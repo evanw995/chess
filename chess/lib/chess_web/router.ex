@@ -30,7 +30,6 @@ defmodule ChessWeb.Router do
     resources "/users", UserController
     resources "/games", GameController
     post "/games/:id", GameController, :update
-    get "/play_game/:game_id", GameController, :play_game
 
     get "/", PageController, :index
     get "/feed", PageController, :feed

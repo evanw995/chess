@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { ChessGame } from './ChessGame.jsx';
 
 export default function run_gamePage(root, channel) {
-  ReactDOM.render(<GamePage channel={channel}/>, root);
+  ReactDOM.render(<GamePage channel={channel} />, root);
 }
 
 class GamePage extends React.Component {

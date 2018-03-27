@@ -10,7 +10,7 @@ defmodule ChessWeb.SessionController do
       conn
       |> put_session(:user_id, user.id)
       |> put_flash(:info, "Logged in as #{user.name}")
-      |> redirect(to: "/users") #change to redirect to /games
+      |> redirect(to: page_path(conn, :my_games, user))
     else
       conn
       |> put_flash(:error, "Incorrect login")
