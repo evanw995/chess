@@ -46,6 +46,10 @@ export class ChessGame extends React.Component {
             sparePieces: true
         };
         var board = ChessBoard('board', cfg);
+        // <div id="placeholder">
+        //         Placeholder.
+        //     </div>
+        
         return (
             <div id="board" style="width: 400px"></div>
         );

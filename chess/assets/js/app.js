@@ -59,17 +59,25 @@ $(init_join);
 import run_gamePage from "./gamePage";
 
 function play() {
-    if (document.getElementById('game')) {
-        let channel = socket.channel("games:" + window.game_name, {});
-        channel.join()
-            .receive("ok", resp => {
-                let root = document.getElementById('game');
-                run_gamePage(root, channel);
 
-                console.log("games:" + window.game_name + " joined successfully", resp);
-            })
-            .receive("error", resp => { console.log("Unable to join", resp); });
+    let root = document.getElementById('game');
+
+    if (root) {
+        let channel = socket.channel("games:" + window.game_name, {});
+        run_gamePage(root, channel);
     }
+
+    // if (document.getElementById('game')) {
+    //     let channel = socket.channel("games:" + window.game_name, {});
+    //     channel.join()
+    //         .receive("ok", resp => {
+    //             let root = document.getElementById('game');
+    //             run_gamePage(root, channel);
+
+    //             console.log("games:" + window.game_name + " joined successfully", resp);
+    //         })
+    //         .receive("error", resp => { console.log("Unable to join", resp); });
+    // }
 }
 
 $(play);

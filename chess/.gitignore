@@ -10,6 +10,9 @@ erl_crash.dump
 # Generated on crash by NPM
 npm-debug.log
 
+# node_modules
+/node_modules
+
 # Static artifacts
 /assets/node_modules
 
