@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import ChessBoard from 'chessboardjs';
 
 export class ChessGame extends React.Component {
 
