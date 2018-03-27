@@ -15,7 +15,11 @@
   <tbody>
 <%= for user <- @users do %>
     <tr>
-      <td><%= user.email %></td>
+      <%= if user.id == @current_user.id do %>
+        <td><%= user.email %></td>
+      <% else %>
+        <td>Hidden</td>
+      <% end %>
       <td><%= user.name %></td>
       <td><%= user.wins %></td>
       <td><%= user.draws %></td>
