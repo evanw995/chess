@@ -22,12 +22,23 @@ defmodule Chess.Play do
     |> Repo.preload(:black)
   end
 
-  # List games with only one user
-  def list_open_games do
+  # List games with only one user where the user is not
+  # the current user
+  def list_open_games(id) do
     Repo.all(Game)
     |> Repo.preload(:white)
     |> Enum.filter(fn(x) ->
-      x.black_id == nil end)
+      x.black_id == nil &&
+      x.white_id != id end)
+  end
+
+  # List games the user belongs to
+  def list_my_games(id) do
+    Repo.all(Game)
+    |> Repo.preload(:white)
+    |> Enum.filter(fn(x) ->
+      x.white_id == String.to_integer(id) ||
+      x.black_id == String.to_integer(id) end)
   end
 
   @doc """
