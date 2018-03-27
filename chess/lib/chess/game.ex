@@ -26,59 +26,59 @@ defmodule Chess.Game do
   end
 
 	# Move handling function from channel input
-  def move(game, move) do
-		color = String.at(move.piece, 0)
-		piece = String.at(move.piece, 1)
+  def move(game, oldLocation, newLocation, piece) do
+		color = String.at(piece, 0)
+		piece = String.at(piece, 1)
     cond do
     	(color != game.turn) -> # Cannot move that color
 				game
-			(move.piece != game.position[String.to_atom(move.source)]) -> # That piece isn"t on that square, how did you even call this?
+			(piece != game.position[String.to_atom(oldLocation)]) -> # That piece isn"t on that square, how did you even call this?
 				game
-			(move.newLocation == move.oldLocation) -> # That"s not a move!
+			(newLocation == oldLocation) -> # That"s not a move!
 				game
 			(piece == "P") -> # Pawn move
-				if isLegalPawnMove(game.position, move.newLocation, move.oldLocation, color, game.enPassantSquare) do
-					pieceMovedGameState = pawnMove(game, move)
+				if isLegalPawnMove(game.position, newLocation, oldLocation, color, game.enPassantSquare) do
+					pieceMovedGameState = pawnMove(game, oldLocation, newLocation)
 					newGameState = checkGameState(pieceMovedGameState)
 					newGameState
 				else
 					game 
 				end
 			(piece == "R") -> # Rook move
-				if isLegalStraightMove(game.position, move.newLocation, move.oldLocation, color) do
-					pieceMovedGameState = rookMove(game, move)
+				if isLegalStraightMove(game.position, newLocation, oldLocation, color) do
+					pieceMovedGameState = rookMove(game, oldLocation, newLocation)
 					newGameState = checkGameState(pieceMovedGameState)
 					newGameState
 				else
 					game
 				end
 			(piece == "B") -> # Bishop move
-				if isLegalDiagonalMove(game.position, move.newLocation, move.oldLocation, color) do
-					pieceMovedGameState = performMove(game, move)
+				if isLegalDiagonalMove(game.position, newLocation, oldLocation, color) do
+					pieceMovedGameState = performMove(game, oldLocation, newLocation)
 					newGameState = checkGameState(pieceMovedGameState)
 					newGameState
 				else
 					game
 				end
 			(piece == "N") -> # Knight move
-				if isLegalKnightMove(game.position, move.newLocation, move.oldLocation, color) do
-					pieceMovedGameState = performMove(game, move)
+				if isLegalKnightMove(game.position, newLocation, oldLocation, color) do
+					pieceMovedGameState = performMove(game, oldLocation, newLocation)
 					newGameState = checkGameState(pieceMovedGameState)
 					newGameState
 				else
 					game
 				end
 			(piece == "Q") -> # Queen move
-				if isLegalQueenMove(game.position, move.newLocation, move.oldLocation, color) do
-					pieceMovedGameState = performMove(game, move)
+				if isLegalQueenMove(game.position, newLocation, oldLocation, color) do
+					pieceMovedGameState = performMove(game, oldLocation, newLocation)
 					newGameState = checkGameState(pieceMovedGameState)
 					newGameState
 				else
 					game
 				end
 			(piece == "K") -> # King move
-				if isLegalKingMove(game, move.newLocation, move.oldLocation, color, game.inCheck) do
-					pieceMovedGameState = kingMove(game, move)
+				if isLegalKingMove(game, newLocation, oldLocation, color, game.inCheck) do
+					pieceMovedGameState = kingMove(game, oldLocation, newLocation)
 					newGameState = checkGameState(pieceMovedGameState) # TODO: Check for checks on both sides, as king move could open a check on opponent
 					newGameState
 				else
@@ -93,23 +93,23 @@ defmodule Chess.Game do
 	# - captures
 	# - piece promotion (auto-queen or not?)
 	# - adding piece to target square, removing piece from source square
-	def performMove(game, move) do
+	def performMove(game, oldLocation, newLocation) do
 		position = game.position
 
-		oldLocationRank = String.to_integer(String.at(move.oldLocation, 1))
-		newLocationRank = String.to_integer(String.at(move.newLocation, 1))
+		oldLocationRank = String.to_integer(String.at(oldLocation, 1))
+		newLocationRank = String.to_integer(String.at(newLocation, 1))
 
 		# keys to access map
-		oldLocation = String.to_atom(move.oldLocation)
-		newLocation = String.to_atom(move.newLocation)
+		oldLocationAtom = String.to_atom(oldLocation)
+		newLocationAtom = String.to_atom(newLocation)
 		piece = position[oldLocation]
-		removePiece = Map.delete(position, oldLocation)
-		newPosition = Map.put(removePiece, newLocation, piece)
+		removePiece = Map.delete(position, oldLocationAtom)
+		newPosition = Map.put(removePiece, newLocationAtom, piece)
 		newGameState = Map.put(game, :position, newPosition)
 
 		newGameState1 = cond do 
 			piece == "P" && abs(oldLocationRank - newLocationRank) == 2 -> # Pawn moved two spaces, enable en passant square
-				fileString = String.at(move.oldLocation, 0)
+				fileString = String.at(oldLocation, 0)
 				middleSquare = (oldLocationRank + newLocationRank) / 2
 				middleSquareString = Integer.to_string(middleSquare)
 				Map.put(game, :enPassantSquare, "#{fileString}#{middleSquareString}")
@@ -120,77 +120,77 @@ defmodule Chess.Game do
 	end
 
 	# Must nullify that side castling
-	def rookMove(game, move) do
+	def rookMove(game, oldLocation, newLocation) do
 		castleGameState = cond do
-			move.oldLocation == "a1" && game.whiteQueensideCastle ->
+			oldLocation == "a1" && game.whiteQueensideCastle ->
 				Map.put(game, :whiteQueensideCastle, false)
-			move.oldLocation == "h1" && game.whiteKingsideCastle ->
+			oldLocation == "h1" && game.whiteKingsideCastle ->
 				Map.put(game, :whiteKingsideCastle, false)
-			move.oldLocation == "a8" && game.blackQueensideCastle ->
+			oldLocation == "a8" && game.blackQueensideCastle ->
 				Map.put(game, :blackQueensideCastle, false)
-			move.oldLocation == "h8" && game.blackKingsideCastle ->
+			oldLocation == "h8" && game.blackKingsideCastle ->
 				Map.put(game, :blackKingsideCastle, false)
 			true ->
 				game
 		end
-		performMove(castleGameState, move)
+		performMove(castleGameState, oldLocation, newLocation)
 	end
 
 	# Must handle castling and set castling rights
-	def kingMove(game, move) do
+	def kingMove(game, oldLocation, newLocation) do
 		cond do
-			move.oldLocation == "e1" && game.whiteQueensideCastle && move.newLocation == "c1" ->
+			oldLocation == "e1" && game.whiteQueensideCastle && newLocation == "c1" ->
 				newState = Map.put(game, :whiteQueensideCastle, false)
 				newState1 = Map.put(newState, :whiteKingsideCastle, false)
-				moveKing = performMove(newState1, move)
+				moveKing = performMove(newState1, oldLocation, newLocation)
 				moveKingState = Map.put(moveKing, :whiteKingSpace, "c1")
-				performMove(moveKingState, %{ oldLocation: "a1", newLocation: "d1"})
-			move.oldLocation == "e1" && game.whiteKingsideCastle && move.newLocation == "g1" ->
+				performMove(moveKingState, "a1", "d1")
+			oldLocation == "e1" && game.whiteKingsideCastle && newLocation == "g1" ->
 				newState = Map.put(game, :whiteQueensideCastle, false)
 				newState1 = Map.put(newState, :whiteKingsideCastle, false)
-				moveKing = performMove(newState1, move)
+				moveKing = performMove(newState1, oldLocation, newLocation)
 				moveKingState = Map.put(moveKing, :whiteKingSpace, "g1")
-				performMove(moveKingState, %{ oldLocation: "h1", newLocation: "f1"})
-			move.oldLocation == "e8" && game.blackQueensideCastle && move.newLocation == "c8" ->
+				performMove(moveKingState, "h1", "f1")
+			oldLocation == "e8" && game.blackQueensideCastle && newLocation == "c8" ->
 				newState = Map.put(game, :blackQueensideCastle, false)
 				newState1 = Map.put(newState, :blackKingsideCastle, false)
-				moveKing = performMove(newState1, move)
+				moveKing = performMove(newState1, oldLocation, newLocation)
 				moveKingState = Map.put(moveKing, :whiteKingSpace, "c8")
-				performMove(moveKingState, %{ oldLocation: "a8", newLocation: "d8"})
-			move.oldLocation == "e8" && game.blackKingsideCastle && move.newLocation == "g8" ->
+				performMove(moveKingState, "a8", "d8")
+			oldLocation == "e8" && game.blackKingsideCastle && newLocation == "g8" ->
 				newState = Map.put(game, :blackQueensideCastle, false)
 				newState1 = Map.put(newState, :blackKingsideCastle, false)
-				moveKing = performMove(newState1, move)
+				moveKing = performMove(newState1, oldLocation, newLocation)
 				moveKingState = Map.put(moveKing, :whiteKingSpace, "g8")
-				performMove(moveKingState, %{ oldLocation: "h8", newLocation: "f8"})
+				performMove(moveKingState, "h8", "f8")
 			game.turn == "w" ->
-				moveKingState = Map.put(game, :whiteKingSpace, move.newLocation)
-				performMove(moveKingState, move)
+				moveKingState = Map.put(game, :whiteKingSpace, newLocation)
+				performMove(moveKingState, oldLocation, newLocation)
 			game.turn == "b" ->
-				moveKingState = Map.put(game, :blackKingSpace, move.newLocation)
-				performMove(moveKingState, move)
+				moveKingState = Map.put(game, :blackKingSpace, newLocation)
+				performMove(moveKingState, oldLocation, newLocation)
 		end
 	end
 
 	# Must set enPassantSquare, check for promotion
-	def pawnMove(game, move) do
-		oldLocation = String.to_atom(move.oldLocation)
-		newLocation = String.to_atom(move.newLocation)
+	def pawnMove(game, oldLocation, newLocation) do
+		oldLocationAtom = String.to_atom(oldLocation)
+		newLocationAtom = String.to_atom(newLocation)
 		position = game.position
 		piece = cond do
-			game.turn == "w" && String.at(move.newLocation, 1) == "8" ->
+			game.turn == "w" && String.at(newLocation, 1) == "8" ->
 				"wQ"
-			game.turn == "w" && String.at(move.newLocation, 1) == "8" ->
+			game.turn == "w" && String.at(newLocation, 1) == "8" ->
 				"wQ"
-			game.turn == "b" && String.at(move.newLocation, 1) == "1" ->
+			game.turn == "b" && String.at(newLocation, 1) == "1" ->
 				"bQ"
-			game.turn == "b" && String.at(move.newLocation, 1) == "1" ->
+			game.turn == "b" && String.at(newLocation, 1) == "1" ->
 				"bQ"
 			true ->
-				position[oldLocation]
+				position[oldLocationAtom]
 		end
-		removePiece = Map.delete(position, oldLocation)
-		newPosition = Map.put(removePiece, newLocation, piece)
+		removePiece = Map.delete(position, oldLocationAtom)
+		newPosition = Map.put(removePiece, newLocationAtom, piece)
 		newGameState = Map.put(game, :position, newPosition)
 		newGameState
 	end
