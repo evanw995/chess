@@ -3,6 +3,7 @@ defmodule ChessWeb.GameController do
 
   alias Chess.Play
   alias Chess.Play.Game
+  alias Chess.Accounts
 
   def index(conn, _params) do
     games = Play.list_games()
@@ -33,14 +34,29 @@ defmodule ChessWeb.GameController do
 
   def show(conn, %{"id" => id}) do
     game = Play.get_game!(id)
-    black_player = Map.get(game, :black)
+
+    black_id = Map.get(game, :black_id)
+    black_player =
+      case black_id do
+        nil -> nil
+        _ -> Accounts.get_user!(black_id)
+      end
+
+    game =
+      case black_player do
+        nil -> game
+        _ -> %{ game | black: black_player }
+      end
+
     black_name =
       case black_player do
         nil -> ""
         _ -> Map.get(black_player, :name)
       end
+
     white_player = Map.get(game, :white)
     white_name = Map.get(white_player, :name)
+
     render(conn, "show.html", game: game, white: white_name, black: black_name)
   end
 
@@ -55,6 +71,7 @@ defmodule ChessWeb.GameController do
 
     case Play.update_game(game, game_params) do
       {:ok, game} ->
+        raise game
         conn
         |> put_flash(:info, "Game updated successfully.")
         |> redirect(to: game_path(conn, :show, game))

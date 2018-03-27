@@ -22,12 +22,18 @@
       <div class="card-body">
         <h4 class="card-title"><%= game.name %></h4>
         <p>Creator: <%= game.white.name %></p>
-        <%# Map.put(assigns, :action, game_path(@conn, :update, game)) %>
-        <%=# submit "Join", class: "join-button btn btn-primary btn-sm" %>
-        <button class="join-button btn btn-primary btn-sm"
-          data-game-id="<%= game.id %>">
-          Join
-        </button>
+
+        <%= form_for @changeset, game_path(@conn, :update, game), fn f -> %>
+          <div class="form-group">
+            <%= hidden_input f, :black_id, value: "@current_user.id", class: "form-control" %>
+            <%= error_tag f, :black_id %>
+          </div>
+
+          <div class="form-group">
+            <%= submit "Join", class: "btn btn-primary btn-sm" %>
+          </div>
+        <% end %>
+
       </div>
     </div>
   </div>

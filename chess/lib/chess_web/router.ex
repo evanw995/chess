@@ -29,6 +29,7 @@ defmodule ChessWeb.Router do
     pipe_through :browser # Use the default browser stack
     resources "/users", UserController
     resources "/games", GameController
+    post "/games/:id", GameController, :update
 
     get "/", PageController, :index
     get "/feed", PageController, :feed
