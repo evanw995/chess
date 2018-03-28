@@ -23,6 +23,14 @@ defmodule ChessWeb.GamesChannel do
     {:reply, {:ok, %{ "game" => Game.client_view(game)}}, socket}
   end
 
+  def handle_in("checkmate", %{ "turn" => turn }, socket) do
+    raise socket
+  end
+
+  def handle_in("stalemate", %{}, socket) do
+    raise socket
+  end
+
   # Add authorization logic here as required.
   defp authorized?(_payload) do
     true
