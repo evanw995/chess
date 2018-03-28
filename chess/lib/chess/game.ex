@@ -131,7 +131,7 @@ defmodule Chess.Game do
 		# keys to access map
 		oldLocationAtom = String.to_atom(oldLocation)
 		newLocationAtom = String.to_atom(newLocation)
-		piece = position[oldLocation]
+		piece = position[oldLocationAtom]
 		removePiece = Map.delete(position, oldLocationAtom)
 		newPosition = Map.put(removePiece, newLocationAtom, piece)
 		newGameState = Map.put(game, :position, newPosition)
@@ -373,6 +373,8 @@ defmodule Chess.Game do
 		space7 = [changeFile(changeRank(space, -2), 1)]
 		space8 = [changeFile(changeRank(space, -2), -1)]
 		allSpaces = Enum.concat([space1, space2, space3, space4, space5, space6, space7, space8])
+		IO.puts("Knight spaces: ")
+		IO.puts(allSpaces)
 		dedupSpaces = Enum.dedup(allSpaces)
 		dedupSpaces
 	end
@@ -660,7 +662,7 @@ defmodule Chess.Game do
 		pieces = Map.to_list(position)
 		# king = "#{color}K"
 		checks = Enum.map(pieces, fn({k, v}) ->
-			if String.at(v, 0) == enemyColor do
+			if String.at(v, 0) == color do
 				piece = String.at(v, 1)
 				key = to_string(k)
 				cond do
