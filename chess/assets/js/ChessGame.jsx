@@ -32,12 +32,13 @@ export class ChessGame extends React.Component {
     }
 
     handleMove(piece, oldLocation, newLocation) {
-        var originalState = Object.assign({}, this.state.position);
+        // var originalState = Object.assign({}, this.state.position);
         this.channel.push("move", { oldLocation: oldLocation, newLocation: newLocation })
             .receive("ok", this.gotView.bind(this));
-        if (_.isEqual(originalState, this.state.position)) {
-            location.reload();
-        }
+        // if (_.isEqual(originalState, this.state.position)) {
+        //     location.reload();
+        // }
+        location.reload();
     }
 
 
