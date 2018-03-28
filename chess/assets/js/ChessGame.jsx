@@ -23,6 +23,11 @@ export class ChessGame extends React.Component {
 
     gotView(view) {
         console.log("New view", view);
+
+        if this.state.gameOver {
+            this.channel.push()
+        }
+
         this.setState(view.game);
     }
 
@@ -40,7 +45,7 @@ export class ChessGame extends React.Component {
         var handleMove = this.handleMove.bind(this);
         var pieceList = this.state.position;
         return (
-            <div>
+            <div style={{ width: '500px' }}>
                 <Chess pieces={pieceList} onMovePiece={handleMove} />
             </div>
         );
