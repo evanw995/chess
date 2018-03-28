@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ChessBoard from 'chessboardjs';
 import $ from 'jquery';
+import Chess from 'react-chess';
 
 window.$ = $
 window.jQuery = $
@@ -32,39 +33,49 @@ export class ChessGame extends React.Component {
         this.setState(view.game);
     }
 
-    handleMove(newLocation, oldLocation, piece) {
-        this.channel.push("move", { oldLocation: oldLocation, newLocation: newLocation, piece: piece }) // await?
+    handleMove(piece, oldLocation, newLocation) {
+        console.log(newLocation);
+        console.log(oldLocation);
+        this.channel.push("move", { oldLocation: oldLocation, newLocation: newLocation })
             .receive("ok", this.gotView.bind(this));
     }
 
-    render() {
-        var onDragMove = function(newLocation, oldLocation, source,
-                        piece, position, orientation) {
-                            handleMove(newLocation, oldLocation, piece);
-            };
 
-        
-        // var board = ChessBoard("board", cfg);
-        // <div id="placeholder">
-        //         Placeholder.
-        //     </div>
-        
+    render() {
+        var handleMove = this.handleMove.bind(this);
+        var pieceList = this.state.position;
         return (
             <div>
-                <div id="board1" style="width: 400px"></div>
+                <Chess pieces={pieceList} onMovePiece={handleMove} />
             </div>
         );
     }
 
-    componentDidMount() {
-        var cfg = {
-            draggable: true,
-            position: 'start',
-            onDragMove: onDragMove,
-            sparePieces: true
-        };
-        setTimeout(function() {
-            var board1 = new ChessBoard('board1', 'start');
-        }, 0);
-    }
+    // componentDidMount() {
+    //     var cfg = {
+    //         draggable: true,
+    //         position: 'start',
+    //         onDragMove: onDragMove,
+    //         sparePieces: true
+    //     };
+    //     setTimeout(function() {
+    //         var board1 = new ChessBoard('board1', 'start');
+    //     }, 10);
+    // }
+    // setTimeout(function() {
+        //     var board1 = new ChessBoard('board1', 'start');
+        //     board1.position = this.state.position
+        // }, 100);
+        
+        // // var board = ChessBoard("board", cfg);
+        // // <div id="placeholder">
+        // //         Placeholder.
+        // //     </div>
+         // var cfg = {
+        //     draggable: true,
+        //     position: 'start',
+        //     onDragMove: onDragMove,
+        //     sparePieces: true
+        // };
+        
 }

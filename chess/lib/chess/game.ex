@@ -18,29 +18,47 @@ defmodule Chess.Game do
 
   def client_view(game) do
     %{
-      position: game.position, # Required to play game
+      position: positionToList(Map.to_list(game.position)), # Required to play game
       gameOver: game.gameOver, # View should change when game is over
       turn: game.turn, # Client should see whose turn it is
       inCheck: game.inCheck, # Could be useful for notification for client
     }
   end
 
+  def positionToList(position) do
+	Enum.map(position, fn({k, v}) ->
+		piece = String.at(v, 1)
+		color = String.at(v, 0)
+		key = to_string(k)
+
+		colorPiece = cond do
+			color == "w" ->
+				String.upcase(piece)
+			color == "b" ->
+				String.downcase(piece)
+		end
+		"#{colorPiece}@#{key}"
+	end)
+  end
+
 	# Move handling function from channel input
-  def move(game, oldLocation, newLocation, piece) do
-		color = String.at(piece, 0)
-		piece = String.at(piece, 1)
+  def move(game, oldLocation, newLocation) do
+
+		color = String.at(game.position[String.to_atom(oldLocation)], 0)
+		piece = String.at(game.position[String.to_atom(oldLocation)], 1)
     cond do
     	(color != game.turn) -> # Cannot move that color
 				game
-			(piece != game.position[String.to_atom(oldLocation)]) -> # That piece isn"t on that square, how did you even call this?
-				game
+			# (piece != game.position[String.to_atom(oldLocation)]) -> # That piece isn"t on that square, how did you even call this?
+			# 	game
 			(newLocation == oldLocation) -> # That"s not a move!
 				game
 			(piece == "P") -> # Pawn move
 				if isLegalPawnMove(game.position, newLocation, oldLocation, color, game.enPassantSquare) do
 					pieceMovedGameState = pawnMove(game, oldLocation, newLocation)
 					newGameState = checkGameState(pieceMovedGameState)
-					newGameState
+					updatedTurn = updateTurn(newGameState)
+					updatedTurn
 				else
 					game 
 				end
@@ -48,7 +66,8 @@ defmodule Chess.Game do
 				if isLegalStraightMove(game.position, newLocation, oldLocation, color) do
 					pieceMovedGameState = rookMove(game, oldLocation, newLocation)
 					newGameState = checkGameState(pieceMovedGameState)
-					newGameState
+					updatedTurn = updateTurn(newGameState)
+					updatedTurn
 				else
 					game
 				end
@@ -56,7 +75,8 @@ defmodule Chess.Game do
 				if isLegalDiagonalMove(game.position, newLocation, oldLocation, color) do
 					pieceMovedGameState = performMove(game, oldLocation, newLocation)
 					newGameState = checkGameState(pieceMovedGameState)
-					newGameState
+					updatedTurn = updateTurn(newGameState)
+					updatedTurn
 				else
 					game
 				end
@@ -64,7 +84,8 @@ defmodule Chess.Game do
 				if isLegalKnightMove(game.position, newLocation, oldLocation, color) do
 					pieceMovedGameState = performMove(game, oldLocation, newLocation)
 					newGameState = checkGameState(pieceMovedGameState)
-					newGameState
+					updatedTurn = updateTurn(newGameState)
+					updatedTurn
 				else
 					game
 				end
@@ -72,7 +93,8 @@ defmodule Chess.Game do
 				if isLegalQueenMove(game.position, newLocation, oldLocation, color) do
 					pieceMovedGameState = performMove(game, oldLocation, newLocation)
 					newGameState = checkGameState(pieceMovedGameState)
-					newGameState
+					updatedTurn = updateTurn(newGameState)
+					updatedTurn
 				else
 					game
 				end
@@ -80,12 +102,22 @@ defmodule Chess.Game do
 				if isLegalKingMove(game, newLocation, oldLocation, color, game.inCheck) do
 					pieceMovedGameState = kingMove(game, oldLocation, newLocation)
 					newGameState = checkGameState(pieceMovedGameState) # TODO: Check for checks on both sides, as king move could open a check on opponent
-					newGameState
+					updatedTurn = updateTurn(newGameState)
+					updatedTurn
 				else
 					game
 				end
 		end
-  end
+    end
+
+	def updateTurn(game) do
+		newGameState = cond do
+			game.turn == "w" ->
+				Map.put(game, :turn, "b")
+			game.turn == "b" ->
+				Map.put(game, :turn, "w")
+		end
+	end
 
 	## Helper for move function. Must handle:
 	# - castling
