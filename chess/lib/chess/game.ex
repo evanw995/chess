@@ -53,7 +53,7 @@ defmodule Chess.Game do
 		(game.gameOver) -> # No more moves!
 			game
 		(piece == "P") -> # Pawn move
-			if isLegalPawnMove(game.position, newLocation, oldLocation, color, game.enPassantSquare) do
+			if isLegalPawnMove(game.position, newLocation, oldLocation, color, game.enPassantSquare) && !isCheck(updateTurn(performMove(game, oldLocation, newLocation))) do
 				pieceMovedGameState = pawnMove(game, oldLocation, newLocation)
 				newGameState = checkGameState(pieceMovedGameState)
 				updatedTurn = updateTurn(newGameState)
@@ -62,7 +62,7 @@ defmodule Chess.Game do
 				game 
 			end
 		(piece == "R") -> # Rook move
-			if isLegalStraightMove(game.position, newLocation, oldLocation, color) do
+			if isLegalStraightMove(game.position, newLocation, oldLocation, color) && !isCheck(updateTurn(performMove(game, oldLocation, newLocation))) do
 				pieceMovedGameState = rookMove(game, oldLocation, newLocation)
 				newGameState = checkGameState(pieceMovedGameState)
 				updatedTurn = updateTurn(newGameState)
@@ -71,7 +71,7 @@ defmodule Chess.Game do
 				game
 			end
 		(piece == "B") -> # Bishop move
-			if isLegalDiagonalMove(game.position, newLocation, oldLocation, color) do
+			if isLegalDiagonalMove(game.position, newLocation, oldLocation, color) && !isCheck(updateTurn(performMove(game, oldLocation, newLocation))) do
 				pieceMovedGameState = performMove(game, oldLocation, newLocation)
 				newGameState = checkGameState(pieceMovedGameState)
 				updatedTurn = updateTurn(newGameState)
@@ -80,7 +80,7 @@ defmodule Chess.Game do
 				game
 			end
 		(piece == "N") -> # Knight move
-			if isLegalKnightMove(game.position, newLocation, oldLocation, color) do
+			if isLegalKnightMove(game.position, newLocation, oldLocation, color) && !isCheck(updateTurn(performMove(game, oldLocation, newLocation))) do
 				pieceMovedGameState = performMove(game, oldLocation, newLocation)
 				newGameState = checkGameState(pieceMovedGameState)
 				updatedTurn = updateTurn(newGameState)
@@ -89,7 +89,7 @@ defmodule Chess.Game do
 				game
 			end
 		(piece == "Q") -> # Queen move
-			if isLegalQueenMove(game.position, newLocation, oldLocation, color) do
+			if isLegalQueenMove(game.position, newLocation, oldLocation, color) && !isCheck(updateTurn(performMove(game, oldLocation, newLocation))) do
 				pieceMovedGameState = performMove(game, oldLocation, newLocation)
 				newGameState = checkGameState(pieceMovedGameState)
 				updatedTurn = updateTurn(newGameState)
@@ -98,7 +98,7 @@ defmodule Chess.Game do
 				game
 			end
 		(piece == "K") -> # King move
-			if isLegalKingMove(game, newLocation, oldLocation, color, game.inCheck) do
+			if isLegalKingMove(game, newLocation, oldLocation, color, game.inCheck) && !isCheck(updateTurn(performMove(game, oldLocation, newLocation))) do
 				pieceMovedGameState = kingMove(game, oldLocation, newLocation)
 				newGameState = checkGameState(pieceMovedGameState) # TODO: Check for checks on both sides, as king move could open a check on opponent
 				updatedTurn = updateTurn(newGameState)
@@ -603,7 +603,7 @@ defmodule Chess.Game do
 		else
 			game.blackKingSpace
 		end
-		newState = Map.put(game, :inCheck, isCheck(game.position, game.turn, kingSpace))
+		newState = Map.put(game, :inCheck, isCheck(game))
 		gameOver = (isCheckMate(newState, game.turn, kingSpace) || isStaleMate(newState, game.turn, kingSpace))
 		newState1 = Map.put(newState, :gameOver, gameOver)
 		newState1
@@ -642,7 +642,7 @@ defmodule Chess.Game do
 						end)
 					piece == "K" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalKingMove(game, x, key, color, isCheck(game.position, color, kingSpace))
+							isLegalKingMove(game, x, key, color, isCheck(game))
 						end)
 				end
 			end 
@@ -663,26 +663,31 @@ defmodule Chess.Game do
 	# Tough function: Determine whether king is in check
 	# - Check all opponent pieces and see if they could move to the king"s space
 	# Color is whose turn it is (white moving, see if white king is in check)
-	def isCheck(position, color, kingSpace) do
+	def isCheck(game) do
+		kingSpace = if game.turn == "b" do
+			game.whiteKingSpace
+		else
+			game.blackKingSpace
+		end
 		IO.puts("In isCheck")
-		enemyColor = enemyColor(color)
-		pieces = Map.to_list(position)
+		enemyColor = enemyColor(game.turn)
+		pieces = Map.to_list(game.position)
 		# king = "#{color}K"
 		checks = Enum.map(pieces, fn({k, v}) ->
-			if String.at(v, 0) == color do
+			if String.at(v, 0) == game.turn do
 				piece = String.at(v, 1)
 				key = to_string(k)
 				cond do
 					piece == "P" ->
-						isLegalPawnMove(position, kingSpace, key, color, "")
+						isLegalPawnMove(game.position, kingSpace, key, game.turn, "")
 					piece == "R" ->
-						isLegalStraightMove(position, kingSpace, key, color)
+						isLegalStraightMove(game.position, kingSpace, key, game.turn)
 					piece == "N" ->
-						isLegalKnightMove(position, kingSpace, key, color)
+						isLegalKnightMove(game.position, kingSpace, key, game.turn)
 					piece == "B" ->
-						isLegalDiagonalMove(position, kingSpace, key, color)
+						isLegalDiagonalMove(game.position, kingSpace, key, game.turn)
 					piece == "Q" ->
-						isLegalQueenMove(position, kingSpace, key, color)
+						isLegalQueenMove(game.position, kingSpace, key, game.turn)
 					# Check to make sure cant move next to opponent king
 					piece == "K" ->
 						files = "abcdefgh"
@@ -707,12 +712,12 @@ defmodule Chess.Game do
 	# Determines if the position is checkmate for given color
 	# If king is in check, validate whether king is in check after all possible moves for given color 
 	def isCheckMate(game, color, kingSpace) do
-		isCheck(game.position, color, kingSpace) && !hasLegalMoves(game, color, kingSpace)
+		isCheck(game) && !hasLegalMoves(game, color, kingSpace)
 	end
 
 	# Opposite of checkmate function-- king is not in check, but all legal moves would place him in check
 	def isStaleMate(game, color, kingSpace) do
-		!isCheck(game.position, color, kingSpace) && !hasLegalMoves(game, color, kingSpace)
+		!isCheck(game) && !hasLegalMoves(game, color, kingSpace)
 	end
 
 	# Helper function
