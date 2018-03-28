@@ -5,8 +5,8 @@ defmodule ChessWeb.GamesChannel do
 
   def join("games:" <> name, payload, socket) do
     if authorized?(payload) do
-      # game = Chess.GameBackup.load(name) || Game.newGame()
-      game = Game.newGame()
+      game = Chess.GameBackup.load(name) || Game.newGame()
+      # game = Game.newGame()
       socket = socket
       |> assign(:game, game)
       |> assign(:name, name)
@@ -18,7 +18,7 @@ defmodule ChessWeb.GamesChannel do
 
   def handle_in("move", %{ "oldLocation" => oldLocation, "newLocation" => newLocation }, socket) do
     game = Game.move(socket.assigns[:game], oldLocation, newLocation)
-    # Chess.GameBackup.save(socket.assigns[:name], game)
+    Chess.GameBackup.save(socket.assigns[:name], game)
     socket = assign(socket, :game, game)
     {:reply, {:ok, %{ "game" => Game.client_view(game)}}, socket}
   end

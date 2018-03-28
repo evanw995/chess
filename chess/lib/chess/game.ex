@@ -43,75 +43,72 @@ defmodule Chess.Game do
 
 	# Move handling function from channel input
   def move(game, oldLocation, newLocation) do
-
 		color = String.at(game.position[String.to_atom(oldLocation)], 0)
 		piece = String.at(game.position[String.to_atom(oldLocation)], 1)
     cond do
     	(color != game.turn) -> # Cannot move that color
+			game
+		(newLocation == oldLocation) -> # That"s not a move!
+			game
+		(piece == "P") -> # Pawn move
+			if isLegalPawnMove(game.position, newLocation, oldLocation, color, game.enPassantSquare) do
+				pieceMovedGameState = pawnMove(game, oldLocation, newLocation)
+				newGameState = checkGameState(pieceMovedGameState)
+				updatedTurn = updateTurn(newGameState)
+				updatedTurn
+			else
+				game 
+			end
+		(piece == "R") -> # Rook move
+			if isLegalStraightMove(game.position, newLocation, oldLocation, color) do
+				pieceMovedGameState = rookMove(game, oldLocation, newLocation)
+				newGameState = checkGameState(pieceMovedGameState)
+				updatedTurn = updateTurn(newGameState)
+				updatedTurn
+			else
 				game
-			# (piece != game.position[String.to_atom(oldLocation)]) -> # That piece isn"t on that square, how did you even call this?
-			# 	game
-			(newLocation == oldLocation) -> # That"s not a move!
+			end
+		(piece == "B") -> # Bishop move
+			if isLegalDiagonalMove(game.position, newLocation, oldLocation, color) do
+				pieceMovedGameState = performMove(game, oldLocation, newLocation)
+				newGameState = checkGameState(pieceMovedGameState)
+				updatedTurn = updateTurn(newGameState)
+				updatedTurn
+			else
 				game
-			(piece == "P") -> # Pawn move
-				if isLegalPawnMove(game.position, newLocation, oldLocation, color, game.enPassantSquare) do
-					pieceMovedGameState = pawnMove(game, oldLocation, newLocation)
-					newGameState = checkGameState(pieceMovedGameState)
-					updatedTurn = updateTurn(newGameState)
-					updatedTurn
-				else
-					game 
-				end
-			(piece == "R") -> # Rook move
-				if isLegalStraightMove(game.position, newLocation, oldLocation, color) do
-					pieceMovedGameState = rookMove(game, oldLocation, newLocation)
-					newGameState = checkGameState(pieceMovedGameState)
-					updatedTurn = updateTurn(newGameState)
-					updatedTurn
-				else
-					game
-				end
-			(piece == "B") -> # Bishop move
-				if isLegalDiagonalMove(game.position, newLocation, oldLocation, color) do
-					pieceMovedGameState = performMove(game, oldLocation, newLocation)
-					newGameState = checkGameState(pieceMovedGameState)
-					updatedTurn = updateTurn(newGameState)
-					updatedTurn
-				else
-					game
-				end
-			(piece == "N") -> # Knight move
-				if isLegalKnightMove(game.position, newLocation, oldLocation, color) do
-					pieceMovedGameState = performMove(game, oldLocation, newLocation)
-					newGameState = checkGameState(pieceMovedGameState)
-					updatedTurn = updateTurn(newGameState)
-					updatedTurn
-				else
-					game
-				end
-			(piece == "Q") -> # Queen move
-				if isLegalQueenMove(game.position, newLocation, oldLocation, color) do
-					pieceMovedGameState = performMove(game, oldLocation, newLocation)
-					newGameState = checkGameState(pieceMovedGameState)
-					updatedTurn = updateTurn(newGameState)
-					updatedTurn
-				else
-					game
-				end
-			(piece == "K") -> # King move
-				if isLegalKingMove(game, newLocation, oldLocation, color, game.inCheck) do
-					pieceMovedGameState = kingMove(game, oldLocation, newLocation)
-					newGameState = checkGameState(pieceMovedGameState) # TODO: Check for checks on both sides, as king move could open a check on opponent
-					updatedTurn = updateTurn(newGameState)
-					updatedTurn
-				else
-					game
-				end
+			end
+		(piece == "N") -> # Knight move
+			if isLegalKnightMove(game.position, newLocation, oldLocation, color) do
+				pieceMovedGameState = performMove(game, oldLocation, newLocation)
+				newGameState = checkGameState(pieceMovedGameState)
+				updatedTurn = updateTurn(newGameState)
+				updatedTurn
+			else
+				game
+			end
+		(piece == "Q") -> # Queen move
+			if isLegalQueenMove(game.position, newLocation, oldLocation, color) do
+				pieceMovedGameState = performMove(game, oldLocation, newLocation)
+				newGameState = checkGameState(pieceMovedGameState)
+				updatedTurn = updateTurn(newGameState)
+				updatedTurn
+			else
+				game
+			end
+		(piece == "K") -> # King move
+			if isLegalKingMove(game, newLocation, oldLocation, color, game.inCheck) do
+				pieceMovedGameState = kingMove(game, oldLocation, newLocation)
+				newGameState = checkGameState(pieceMovedGameState) # TODO: Check for checks on both sides, as king move could open a check on opponent
+				updatedTurn = updateTurn(newGameState)
+				updatedTurn
+			else
+				game
+			end
 		end
     end
 
 	def updateTurn(game) do
-		newGameState = cond do
+		cond do
 			game.turn == "w" ->
 				Map.put(game, :turn, "b")
 			game.turn == "b" ->
@@ -246,7 +243,7 @@ defmodule Chess.Game do
 			Map.has_key?(position, targetSpaceKey) -> # contains a piece on target spot
 				piece = position[targetSpaceKey]
 				pieceColor = String.at(piece, 0)
-				index = Enum.find_index(diagonal, targetSpace) - 1
+				index = Enum.find_index(diagonal, fn(x) -> targetSpace == x end) - 1
 				squares = Enum.slice(diagonal, 1..index)
 				if (pieceColor == enemyColor(color) && containsNoPieces(squares, position)) do # Enemy piece & nothing in the way
 					true
@@ -254,7 +251,7 @@ defmodule Chess.Game do
 					false
 				end
 			true -> # Target space is empty, check for pieces in the way
-				index = Enum.find_index(diagonal, targetSpace) - 1
+				index = Enum.find_index(diagonal, fn(x) -> targetSpace == x end) - 1
 				squares = Enum.slice(diagonal, 1..index)
 				containsNoPieces(squares, position) # If no pieces are in between start space and target space, move is valid (provided not in check)
 		end
@@ -271,7 +268,7 @@ defmodule Chess.Game do
 			Map.has_key?(position, targetSpaceKey) -> # contains a piece on target spot
 				piece = position[targetSpaceKey]
 				pieceColor = String.at(piece, 0)
-				index = Enum.find_index(straight, targetSpace) - 1
+				index = Enum.find_index(straight, fn(x) -> targetSpace == x end) - 1
 				squares = Enum.slice(straight, 1..index)
 				if (pieceColor == enemyColor(color) && containsNoPieces(squares, position)) do # Enemy piece & nothing in the way
 					true
@@ -279,7 +276,7 @@ defmodule Chess.Game do
 					false
 				end
 			true -> # Target space is empty, check for pieces in the way
-				index = Enum.find_index(straight, targetSpace) - 1
+				index = Enum.find_index(straight, fn(x) -> targetSpace == x end) - 1
 				squares = Enum.slice(straight, 1..index)
 				containsNoPieces(squares, position) # If no pieces are in between start space and target space, move is valid (provided not in check)
 		end
@@ -387,11 +384,13 @@ defmodule Chess.Game do
 	# Return true if given enum of squares contains no pieces in game position
 	def containsNoPieces(squares, position) do
 		size = Enum.count(squares)
-		space = String.to_atom(Enum.at(squares, 0))
+		# IO.puts("Square being evaluated")
+		# IO.puts(Enum.at(squares, 0))
+		# space = String.to_atom(Enum.at(squares, 0))
 		cond do
 			size == 0 -> # No more items to check, return true
 				true
-			Map.has_key?(position, space) -> # Space contained in position object = occupied by piece
+			Map.has_key?(position, String.to_atom(Enum.at(squares, 0))) -> # Space contained in position object = occupied by piece
 				false
 			true ->
 				containsNoPieces(Enum.slice(squares, 1..size-1), position) # Recurse
@@ -465,37 +464,50 @@ defmodule Chess.Game do
 	# Go up or down ranks. Direction 1 = add, -1 = subtract
 	# Return string of new space
 	def changeRank(space, direction) do
-		fileString = String.at(space, 0)
-		rankString = String.at(space, 1)
-		rank = String.to_integer(rankString)
 		cond do
-			(rank + direction < 1) || (rank + direction > 8) -> # bad case
+			space == "" ->
 				""
 			true ->
-				newRank = rank + direction
-				newRankString = Integer.to_string(newRank)
-				newSpace = fileString + newRankString
-				newSpace
+				# IO.puts("Called with space: ")
+				# IO.puts(space)
+				# IO.puts("Called with direction: ")
+				# IO.puts(direction)
+				fileString = String.at(space, 0)
+				rankString = String.at(space, 1)
+				rank = String.to_integer(rankString)
+				cond do
+					(rank + direction < 1) || (rank + direction > 8) -> # bad case
+						""
+					true ->
+						newRank = rank + direction
+						newRankString = Integer.to_string(newRank)
+						newSpace = "#{fileString}#{newRankString}"
+						newSpace
+				end
 		end
 	end
 
 	# Changes files. Direction 1 = towards H file, -1 = towards A file
 	# Return string of new space
 	def changeFile(space, direction) do
-		files = "abcdefgh"
-		fileString = String.at(space, 0)
-		fileIndexMatch = :binary.match(files, fileString)
-		fileIndex = elem(fileIndexMatch, 0)
-		rankString = String.at(space, 1)
 		cond do
-			(fileIndex + direction < 0) || (fileIndex + direction > 7) -> # bad case
+			space == "" ->
 				""
 			true ->
-				newFileIndex = fileIndex + direction
-				newFile = String.at(files, newFileIndex)
-				newFileIndexString = Integer.to_string(newFile)
-				newSpaceString = newFileIndexString + rankString
-				newSpaceString
+				files = "abcdefgh"
+				fileString = String.at(space, 0)
+				fileIndexMatch = :binary.match(files, fileString)
+				fileIndex = elem(fileIndexMatch, 0)
+				rankString = String.at(space, 1)
+				cond do
+					(fileIndex + direction < 0) || (fileIndex + direction > 7) -> # bad case
+						""
+					true ->
+						newFileIndex = fileIndex + direction
+						newFile = String.at(files, newFileIndex)
+						newSpaceString = "#{newFile}#{rankString}"
+						newSpaceString
+				end
 		end
 	end
 	
@@ -588,14 +600,17 @@ defmodule Chess.Game do
 			game.blackKingSpace
 		end
 		newState = Map.put(game, :isCheck, isCheck(game.position, game.turn, kingSpace))
-		gameOver = (isCheckMate(game.position, game.turn, kingSpace) || isStaleMate(game.position, game.turn, kingSpace))
-		newState1 = Map.put(newState, :gameOver, gameOver)
-		newState1
+		# gameOver = (isCheckMate(game, game.turn, kingSpace) || isStaleMate(game, game.turn, kingSpace))
+		# newState1 = Map.put(newState, :gameOver, gameOver)
+		# newState1
+		newState
 	end
 
 	# Determine whether given color has any legal moves
-	def hasLegalMoves(position, color, kingSpace) do
-		pieces = Map.to_list(position)
+	def hasLegalMoves(game, color, kingSpace) do
+		pieces = Map.to_list(game.position)
+		IO.puts("pieces: ")
+		IO.puts(pieces)
 		moves = Enum.map(pieces, fn({k, v}) ->
 			if String.at(v, 0) == color do
 				piece = String.at(v, 1)
@@ -603,31 +618,33 @@ defmodule Chess.Game do
 				cond do
 					piece == "P" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalPawnMove(position, x, key, color, "")
+							isLegalPawnMove(game.position, x, key, color, "")
 						end)
 					piece == "R" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalStraightMove(position, x, key, color)
+							isLegalStraightMove(game.position, x, key, color)
 						end)
 					piece == "N" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalKnightMove(position, x, key, color)
+							isLegalKnightMove(game.position, x, key, color)
 						end)
 					piece == "B" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalDiagonalMove(position, x, key, color)
+							isLegalDiagonalMove(game.position, x, key, color)
 						end)
 					piece == "Q" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalQueenMove(position, x, key, color)
+							isLegalQueenMove(game.position, x, key, color)
 						end)
 					piece == "K" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalKingMove(position, x, key, color, isCheck(position, color, kingSpace))
+							isLegalKingMove(game, x, key, color, isCheck(game.position, color, kingSpace))
 						end)
 				end
 			end 
 		end)
+		IO.puts("moves: ")
+		IO.puts(moves)
 		anyMoves = Enum.map(moves, fn(x) -> 
 			Enum.member?(x, true)
 		end)
@@ -677,13 +694,13 @@ defmodule Chess.Game do
 
 	# Determines if the position is checkmate for given color
 	# If king is in check, validate whether king is in check after all possible moves for given color 
-	def isCheckMate(position, color, kingSpace) do
-		isCheck(position, color, kingSpace) && !hasLegalMoves(position, color, kingSpace)
+	def isCheckMate(game, color, kingSpace) do
+		isCheck(game.position, color, kingSpace) && !hasLegalMoves(game, color, kingSpace)
 	end
 
 	# Opposite of checkmate function-- king is not in check, but all legal moves would place him in check
-	def isStaleMate(position, color, kingSpace) do
-		!isCheck(position, color, kingSpace) && !hasLegalMoves(position, color, kingSpace)
+	def isStaleMate(game, color, kingSpace) do
+		!isCheck(game.position, color, kingSpace) && !hasLegalMoves(game, color, kingSpace)
 	end
 
 	# Helper function

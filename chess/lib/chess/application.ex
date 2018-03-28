@@ -14,6 +14,7 @@ defmodule Chess.Application do
       supervisor(ChessWeb.Endpoint, []),
       # Start your own worker by calling: Chess.Worker.start_link(arg1, arg2, arg3)
       # worker(Chess.Worker, [arg1, arg2, arg3]),
+      worker(Chess.GameBackup, [])
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
