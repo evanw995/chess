@@ -98,7 +98,7 @@ defmodule Chess.Game do
 				game
 			end
 		(piece == "K") -> # King move
-			if isLegalKingMove(game, newLocation, oldLocation, color, game.inCheck) && !isCheck(updateTurn(performMove(game, oldLocation, newLocation))) do
+			if isLegalKingMove(game, newLocation, oldLocation, color, game.inCheck) && !isCheck(updateTurn(kingMove(game, oldLocation, newLocation))) do 
 				pieceMovedGameState = kingMove(game, oldLocation, newLocation)
 				newGameState = checkGameState(pieceMovedGameState) # TODO: Check for checks on both sides, as king move could open a check on opponent
 				updatedTurn = updateTurn(newGameState)
@@ -604,14 +604,15 @@ defmodule Chess.Game do
 			game.blackKingSpace
 		end
 		newState = Map.put(game, :inCheck, isCheck(game))
-		gameOver = (isCheckMate(newState, game.turn, kingSpace) || isStaleMate(newState, game.turn, kingSpace))
+		gameOver = (isCheckMate(newState) || isStaleMate(newState))
 		newState1 = Map.put(newState, :gameOver, gameOver)
 		newState1
 		# newState
 	end
 
 	# Determine whether given color has any legal moves
-	def hasLegalMoves(game, color, kingSpace) do
+	def hasLegalMoves(game) do
+		color = game.turn
 		pieces = Map.to_list(game.position)
 		IO.puts("pieces: ")
 		IO.inspect(pieces)
@@ -622,27 +623,27 @@ defmodule Chess.Game do
 				cond do
 					piece == "P" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalPawnMove(game.position, x, key, color, "")
+							isLegalPawnMove(game.position, x, key, color, "") && !isCheck(performMove(game, key, x))
 						end)
 					piece == "R" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalStraightMove(game.position, x, key, color)
+							isLegalStraightMove(game.position, x, key, color) && !isCheck(performMove(game, key, x))
 						end)
 					piece == "N" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalKnightMove(game.position, x, key, color)
+							isLegalKnightMove(game.position, x, key, color) && !isCheck(performMove(game, key, x))
 						end)
 					piece == "B" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalDiagonalMove(game.position, x, key, color)
+							isLegalDiagonalMove(game.position, x, key, color) && !isCheck(performMove(game, key, x))
 						end)
 					piece == "Q" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalQueenMove(game.position, x, key, color)
+							isLegalQueenMove(game.position, x, key, color) && !isCheck(performMove(game, key, x))
 						end)
 					piece == "K" ->
 						Enum.map(everySquareOnBoard([], "a", 1), fn(x) ->
-							isLegalKingMove(game, x, key, color, isCheck(game))
+							isLegalKingMove(game, x, key, color, isCheck(game)) && !isCheck(kingMove(game, key, x))
 						end)
 				end
 			end 
@@ -711,13 +712,13 @@ defmodule Chess.Game do
 
 	# Determines if the position is checkmate for given color
 	# If king is in check, validate whether king is in check after all possible moves for given color 
-	def isCheckMate(game, color, kingSpace) do
-		isCheck(game) && !hasLegalMoves(game, color, kingSpace)
+	def isCheckMate(game) do
+		isCheck(game) && !hasLegalMoves(game)
 	end
 
 	# Opposite of checkmate function-- king is not in check, but all legal moves would place him in check
-	def isStaleMate(game, color, kingSpace) do
-		!isCheck(game) && !hasLegalMoves(game, color, kingSpace)
+	def isStaleMate(game) do
+		!isCheck(game) && !hasLegalMoves(game)
 	end
 
 	# Helper function
