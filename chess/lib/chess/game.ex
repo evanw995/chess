@@ -50,6 +50,8 @@ defmodule Chess.Game do
 			game
 		(newLocation == oldLocation) -> # That"s not a move!
 			game
+		(game.gameOver) -> # No more moves!
+			game
 		(piece == "P") -> # Pawn move
 			if isLegalPawnMove(game.position, newLocation, oldLocation, color, game.enPassantSquare) do
 				pieceMovedGameState = pawnMove(game, oldLocation, newLocation)
@@ -373,8 +375,8 @@ defmodule Chess.Game do
 		space7 = [changeFile(changeRank(space, -2), 1)]
 		space8 = [changeFile(changeRank(space, -2), -1)]
 		allSpaces = Enum.concat([space1, space2, space3, space4, space5, space6, space7, space8])
-		IO.puts("Knight spaces: ")
-		IO.puts(allSpaces)
+		# IO.puts("Knight spaces: ")
+		# IO.inspect(allSpaces)
 		dedupSpaces = Enum.dedup(allSpaces)
 		dedupSpaces
 	end
@@ -601,18 +603,18 @@ defmodule Chess.Game do
 		else
 			game.blackKingSpace
 		end
-		newState = Map.put(game, :isCheck, isCheck(game.position, game.turn, kingSpace))
-		# gameOver = (isCheckMate(game, game.turn, kingSpace) || isStaleMate(game, game.turn, kingSpace))
-		# newState1 = Map.put(newState, :gameOver, gameOver)
-		# newState1
-		newState
+		newState = Map.put(game, :inCheck, isCheck(game.position, game.turn, kingSpace))
+		gameOver = (isCheckMate(newState, game.turn, kingSpace) || isStaleMate(newState, game.turn, kingSpace))
+		newState1 = Map.put(newState, :gameOver, gameOver)
+		newState1
+		# newState
 	end
 
 	# Determine whether given color has any legal moves
 	def hasLegalMoves(game, color, kingSpace) do
 		pieces = Map.to_list(game.position)
 		IO.puts("pieces: ")
-		IO.puts(pieces)
+		IO.inspect(pieces)
 		moves = Enum.map(pieces, fn({k, v}) ->
 			if String.at(v, 0) == color do
 				piece = String.at(v, 1)
@@ -646,9 +648,14 @@ defmodule Chess.Game do
 			end 
 		end)
 		IO.puts("moves: ")
-		IO.puts(moves)
-		anyMoves = Enum.map(moves, fn(x) -> 
-			Enum.member?(x, true)
+		IO.inspect(moves)
+		anyMoves = Enum.map(moves, fn(x) ->
+			cond do
+				x == nil ->
+					false
+				true ->
+					Enum.member?(x, true)
+			end
 		end)
 		Enum.member?(anyMoves, true)
 	end
@@ -657,7 +664,7 @@ defmodule Chess.Game do
 	# - Check all opponent pieces and see if they could move to the king"s space
 	# Color is whose turn it is (white moving, see if white king is in check)
 	def isCheck(position, color, kingSpace) do
-		
+		IO.puts("In isCheck")
 		enemyColor = enemyColor(color)
 		pieces = Map.to_list(position)
 		# king = "#{color}K"
@@ -691,6 +698,9 @@ defmodule Chess.Game do
 				end
 			end 
 		end)
+		IO.puts("Checks: ")
+		IO.inspect(checks)
+		IO.inspect(Enum.member?(checks, true))
 		Enum.member?(checks, true)
 	end
 
