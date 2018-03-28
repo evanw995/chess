@@ -51,8 +51,8 @@ config :phoenix, :stacktrace_depth, 20
 # Configure your database
 config :chess, Chess.Repo,
   adapter: Ecto.Adapters.Postgres,
-  username: "chessDev",
-  password: "ciNg5nai2ahw",
+  username: "postgres",
+  password: "aer141pwp",
   database: "chess_dev",
   hostname: "localhost",
   pool_size: 10

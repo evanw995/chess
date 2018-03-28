@@ -60,6 +60,12 @@ defmodule Chess.Play do
     |> Repo.preload(:black)
   end
 
+  # def get_game_by_name(name) do
+  #   game = Repo.all(Game)
+  #   |> Enum.filter(fn(x) ->
+  #     x.name == name end)
+  # end
+
   @doc """
   Creates a game.
 

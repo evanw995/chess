@@ -23,13 +23,18 @@ defmodule ChessWeb.GamesChannel do
     {:reply, {:ok, %{ "game" => Game.client_view(game)}}, socket}
   end
 
-  def handle_in("checkmate", %{ "turn" => turn }, socket) do
-    raise socket
-  end
+  # Unused
+  # def handle_in("checkmate", %{ "turn" => turn }, socket) do
+  #   raise socket
+  # end
 
-  def handle_in("stalemate", %{}, socket) do
-    raise socket
-  end
+  # def handle_in("stalemate", %{}, socket) do
+  #   assigns = Map.get(socket, :assigns)
+  #   game_name = Map.get(assigns, :name)
+  #   game = Chess.Play.get_game_by_name(game_name)
+  #          |> Enum.at(0)
+  #   {:reply, {:ok, %{ "id" => game.id }}, socket}
+  # end
 
   # Add authorization logic here as required.
   defp authorized?(_payload) do
